@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 
-const Users = require('../../models/db/users');
+const Users = require('../../models/db/users.js');
 const generateToken = require('../../config/generateToken.js');
 const { verifyAccountInfo } = require('../../middleware/accounts.js');
 const { isValidEmail } = require('../../config/inputEvaluation.js');

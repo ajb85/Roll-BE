@@ -9,12 +9,14 @@ const auth = require('./middleware/authenticate.js');
 
 // Routes
 const authRouter = require('./routes/auth/');
+const gamesRouter = require('./routes/games/');
 
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
 
 server.use('/api/auth', authRouter);
+server.use('/api/games', auth, gamesRouter);
 
 server.get('/', (req, res) => {
   console.log(res);
