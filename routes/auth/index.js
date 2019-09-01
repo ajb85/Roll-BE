@@ -29,6 +29,7 @@ router.post('/', verifyAccountInfo, async (req, res) => {
     const key = isValidEmail(account) ? 'u.email' : 'u.username';
     const user = await Users.find({ [key]: account }).first();
     if (user && bcrypt.compareSync(password, user.password)) {
+      delete user.password;
       return res.status(200).json({
         ...user,
         token: generateToken(user)
