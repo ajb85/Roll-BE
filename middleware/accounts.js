@@ -25,11 +25,14 @@ async function verifyAccountInfo(req, res, next) {
 
   if (email && password) {
     if (email && !isValidEmail(email)) {
-      return res.status(400).json({ message: 'Invalid email format' });
+      return res
+        .status(400)
+        .json({ requestType: 'register', message: 'Invalid email format' });
     }
 
     if (username && !isValidUsername(username)) {
       return res.status(400).json({
+        requestType: 'register',
         message: 'Only alphanumeric characters allowed in a username'
       });
     }
@@ -38,10 +41,14 @@ async function verifyAccountInfo(req, res, next) {
     const emailExists = await Users.find({ email }).first();
 
     if (usernameExists) {
-      return res.status(400).json({ message: 'Username already in use' });
+      return res
+        .status(400)
+        .json({ requestType: 'register', message: 'Username already in use' });
     }
     if (emailExists) {
-      return res.status(400).json({ message: 'Email already in use' });
+      return res
+        .status(400)
+        .json({ requestType: 'register', message: 'Email already in use' });
     }
   }
   password && ((username && email) || account)

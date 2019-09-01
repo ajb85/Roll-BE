@@ -1,6 +1,6 @@
 const router = require('express').Router();
 
-const Users = require('../../models/db/users.js');
+// const Users = require('../../models/db/users.js');
 const Games = require('../../models/db/games.js');
 
 const { verifyNewGame } = require('../../middleware/games.js');

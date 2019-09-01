@@ -34,7 +34,9 @@ router.post('/', verifyAccountInfo, async (req, res) => {
         token: generateToken(user)
       });
     } else {
-      return res.status(401).json({ message: 'Invalid Credentials' });
+      return res
+        .status(401)
+        .json({ requestType: 'login', message: 'Invalid Credentials' });
     }
   }
 });
