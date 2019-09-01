@@ -9,9 +9,8 @@ exports.up = function(knex) {
         .notNullable()
         .unique();
       tbl.text('password');
-      tbl
-        .timestamp('last_action')
-        .defaultsTo(moment().format('YYYY-MM-DD HH:mm:ss'));
+      tbl.boolean('joinable').defaultsTo(true);
+      tbl.timestamp('last_action').defaultsTo(knex.fn.now());
     })
     .createTable('users_in_game', tbl => {
       tbl.increments();
@@ -23,24 +22,12 @@ exports.up = function(knex) {
         .onUpdate('CASCADE')
         .notNullable();
       tbl
-        .integer('player_1')
+        .integer('user_id')
         .references('id')
         .inTable('users')
         .onDelete('CASCADE')
         .onUpdate('CASCADE')
         .notNullable();
-      tbl
-        .integer('player_2')
-        .references('id')
-        .inTable('users')
-        .onDelete('CASCADE')
-        .onUpdate('CASCADE');
-      tbl
-        .integer('player_3')
-        .references('id')
-        .inTable('users')
-        .onDelete('CASCADE')
-        .onUpdate('CASCADE');
     });
 };
 
