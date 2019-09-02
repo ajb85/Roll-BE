@@ -1,5 +1,5 @@
 module.exports = (err, req, res) => {
-  console.log(err);
+  console.log('ERR: ', err);
   const statusCode = err.statusCode || 500;
   const env = process.env.DB_ENVIRONMENT || 'development';
   let error;
