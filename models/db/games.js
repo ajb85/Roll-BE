@@ -24,6 +24,7 @@ function find(filter) {
       'g.name as name',
       'g.password as password',
       'g.last_action as last_action',
+      'g.isJoinable as joinable',
       'ug.user_id as players'
     )
     .join('users_in_game as ug', { 'g.id': 'ug.game_id' });

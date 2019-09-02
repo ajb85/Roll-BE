@@ -1,5 +1,3 @@
-const moment = require('moment');
-
 exports.up = function(knex) {
   return knex.schema
     .createTable('games', tbl => {
@@ -9,7 +7,7 @@ exports.up = function(knex) {
         .notNullable()
         .unique();
       tbl.text('password');
-      tbl.boolean('joinable').defaultsTo(true);
+      tbl.boolean('isJoinable').defaultsTo(true);
       tbl.timestamp('last_action').defaultsTo(knex.fn.now());
     })
     .createTable('users_in_game', tbl => {
