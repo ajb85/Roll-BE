@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/ajb85/dadjokesBE#readme",
   "dependencies": {
+    "app-module-path": "^2.2.0",
     "bcrypt": "^3.0.6",
     "cors": "^2.8.5",
     "dotenv": "^8.0.0",

@@ -1,6 +1,6 @@
 const db = require('../index.js');
 
-module.exports = { find, create, join, usersInGame };
+module.exports = { find, create, join, usersInGame, updateLastAction };
 
 function find(filter) {
   // return filter
@@ -11,6 +11,7 @@ function find(filter) {
         'g.name as name',
         'g.password as password',
         db.raw('ARRAY_AGG(ug.user_id) as players')
+        // db.raw('ARRAY_AGG(ug.user_id) as player_ids')
       )
       .join('users_in_game as ug', { 'ug.game_id': 'g.id' })
       .groupBy('g.id')
@@ -47,4 +48,10 @@ function join(game_id, user_id) {
   return db('users_in_game')
     .insert({ game_id, user_id })
     .then(_ => find({ 'g.id': game_id }).first());
+}
+
+function updateLastAction(id) {
+  return db('games')
+    .where({ id })
+    .update({ last_action: new Date() }, ['*']);
 }
