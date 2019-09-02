@@ -1,6 +1,6 @@
 const db = require('../index.js');
 
-module.exports = { find, create, join, usersInGame, updateLastAction };
+module.exports = { find, create, leave, join, usersInGame, updateLastAction };
 
 function find(filter) {
   // return filter
@@ -55,4 +55,10 @@ function updateLastAction(id) {
   return db('games')
     .where({ id })
     .update({ last_action: new Date() }, ['*']);
+}
+
+function leave(game_id, user_id) {
+  return db('users_in_game')
+    .where({ game_id, user_id })
+    .delete();
 }

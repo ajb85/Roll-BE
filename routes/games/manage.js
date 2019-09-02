@@ -48,4 +48,11 @@ router.post('/user/join', verifyJoin, async (req, res) => {
   return res.status(201).json(joined);
 });
 
+router.post('/user/leave', async (req, res) => {
+  const { user_id } = res.locals.token;
+  const { game_id } = req.body;
+  const leaving = await Games.leave(game_id, user_id);
+  return res.status(201).json(leaving);
+});
+
 module.exports = router;
