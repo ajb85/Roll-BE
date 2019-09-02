@@ -6,6 +6,32 @@ const { isUsersTurn } = require('Game/data/');
 
 module.exports = { verifyNewRoll, verifyRound, verifyUserInGame };
 
+async function verifyUserInGame(req, res, next) {
+  const { user_id } = res.locals.token;
+  const { game_id } = req.params;
+
+  const game = await Games.find({ game_id }).first();
+
+  if (!game) {
+    res.status(404).json({ message: 'Game not found' });
+  }
+
+  if (game_id && !_isPlayerInGame(game_id, user_id)) {
+    return res.status(400).json({
+      requestType: 'play',
+      route: true,
+      message: 'You are not in this game.'
+    });
+  }
+
+  if (game_id && !isUsersTurn(game_id, user_id)) {
+    return res
+      .status(400)
+      .json({ requestType: 'play', message: 'It is not your turn yet.' });
+  }
+  next();
+}
+
 async function verifyNewRoll(req, res, next) {
   const { game_id } = req.params;
   const { user_id } = res.locals.token;
@@ -68,23 +94,6 @@ async function verifyRound(req, res, next) {
   res.locals.score = score;
   res.locals.rolls = rolls;
 
-  next();
-}
-
-function verifyUserInGame(req, res, next) {
-  const { user_id } = res.locals.token;
-  const { game_id } = req.params;
-  if (game_id && !_isPlayerInGame(game_id, user_id)) {
-    return res
-      .status(400)
-      .json({ requestType: 'play', message: 'You are not in this game.' });
-  }
-
-  if (game_id && !isUsersTurn(game_id, user_id)) {
-    return res
-      .status(400)
-      .json({ requestType: 'play', message: 'It is not your turn yet.' });
-  }
   next();
 }
 
