@@ -2,7 +2,7 @@ const Games = require('models/db/games.js');
 const Dice = require('models/db/dice.js');
 const Scores = require('models/db/scores.js');
 
-const { isUsersTurn } = require('Game/data/');
+const { isUsersTurn, isPlayableCategory } = require('Game/data/');
 
 module.exports = { verifyNewRoll, verifyRound, verifyUserInGame };
 
@@ -15,7 +15,6 @@ async function verifyUserInGame(req, res, next) {
   if (!game) {
     res.status(404).json({ message: 'Game not found' });
   }
-
   if (game_id && !_isPlayerInGame(game_id, user_id)) {
     return res.status(400).json({
       requestType: 'play',
@@ -24,11 +23,12 @@ async function verifyUserInGame(req, res, next) {
     });
   }
 
-  if (game_id && !isUsersTurn(game_id, user_id)) {
+  if (game_id && !isUsersTurn({ game_id, user_id })) {
     return res
       .status(400)
       .json({ requestType: 'play', message: 'It is not your turn yet.' });
   }
+
   next();
 }
 
@@ -45,17 +45,9 @@ async function verifyNewRoll(req, res, next) {
       .json({ requestType: 'play', message: 'You are  out of rolls.' });
   }
 
-  const locked = req.body;
+  const { locked } = req.body;
 
-  const lockedDice = [0, 0, 0, 0, 0];
-
-  if (locked && Array.isArray(locked)) {
-    // Lock indices client provided
-    locked.forEach(n => (lockedDice[n] = 1));
-  }
-
-  res.locals.locked = lockedDice;
-  res.locals.game = game;
+  res.locals.locked = locked || [false, false, false, false, false];
   res.locals.rolls = rolls;
   next();
 }
@@ -69,8 +61,10 @@ async function verifyRound(req, res, next) {
   }
 
   const { user_id } = res.locals.token;
-  const score = await Scores.find({ game_id, user_id });
-
+  const { game_id } = req.params;
+  const { category } = req.body;
+  console.log('Category: ', category);
+  const score = await Scores.find({ game_id, user_id }).first();
   if (score[category]) {
     return res.status(400).json({
       requestType: 'play',
@@ -78,9 +72,9 @@ async function verifyRound(req, res, next) {
     });
   }
 
-  if (!validCategories[category]) {
+  if (!isPlayableCategory(category)) {
     return res
-      .status(404)
+      .status(400)
       .json({ requestType: 'play', message: 'That is not a valid category.' });
   }
 
@@ -92,12 +86,12 @@ async function verifyRound(req, res, next) {
   }
 
   res.locals.score = score;
-  res.locals.rolls = rolls;
+  res.locals.lastRoll = rolls[rolls.length - 1].dice;
 
   next();
 }
 
-function _isPlayerInGame(game_id, user_id) {
-  const game = Games.find({ 'g.game_id': game_id });
+async function _isPlayerInGame(game_id, user_id) {
+  const game = await Games.find({ 'g.id': game_id }).first();
   return !!game.players.find(id => parseInt(id, 10) === parseInt(user_id, 10));
 }
