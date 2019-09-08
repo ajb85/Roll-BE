@@ -2,8 +2,16 @@
 const mung = require('express-mung');
 
 module.exports = mung.json((body, req, res) => {
-  if (body && body.password) {
-    delete body.password;
+  if (body && Array.isArray(body)) {
+    body.forEach(g => {
+      if (g.password) {
+        delete g.password;
+      }
+    });
+  } else {
+    if (body && body.password) {
+      delete body.password;
+    }
   }
   return body;
 });
