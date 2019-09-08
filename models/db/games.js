@@ -1,21 +1,38 @@
 const db = require('../index.js');
+const { getGameRound, isUsersTurn } = require('Game/Data/');
+const Dice = require('./Dice.js');
 
-module.exports = { find, create, leave, join, usersInGame, updateLastAction };
+module.exports = {
+  find,
+  findFull,
+  byUserID,
+  usersInGame,
+  create,
+  join,
+  leave,
+  updateLastAction,
+  addScore,
+  saveScore,
+  removeScore
+};
 
 function find(filter) {
   // return filter
   if (filter) {
-    return db('games as g')
-      .select(
-        'g.id as game_id',
-        'g.name as name',
-        'g.password as password',
-        db.raw('ARRAY_AGG(ug.user_id) as players')
-        // db.raw('ARRAY_AGG(ug.user_id) as player_ids')
-      )
-      .join('users_in_game as ug', { 'ug.game_id': 'g.id' })
-      .groupBy('g.id')
-      .where(filter);
+    return (
+      db('games as g')
+        .select(
+          'g.id as game_id',
+          'g.name as name',
+          'g.password as password',
+          db.raw('ARRAY_AGG(ug.user_id) as players')
+          // db.raw('ARRAY_AGG(ug.user_id) as player_ids')
+        )
+        .join('users_in_game as ug', { 'ug.game_id': 'g.id' })
+        // .join()
+        .groupBy('g.id')
+        .where(filter)
+    );
   }
   // .join('users as u', { 'ug.user_id': 'u.id' })
   return db('games as g')
@@ -31,6 +48,28 @@ function find(filter) {
   // .join('users as u', { 'ug.user_id': 'u.id' });
 }
 
+async function findFull(filter, user_id) {
+  if (!filter) return;
+  const game = await find(filter).first();
+  return modifyGameObject(game, user_id);
+}
+
+async function byUserID(user_id) {
+  // I don't know how to do these queries so
+  // Just writing like this to get it done.
+  // Will figure out proper way later
+  const game_ids = await db('users_in_game')
+    .select('game_id')
+    .where({ user_id });
+  return Promise.all(
+    game_ids.map(async ({ game_id }) => {
+      const game = await find({ 'g.id': game_id }).first();
+      delete game.password;
+      return modifyGameObject(game, user_id);
+    })
+  );
+}
+
 function usersInGame(filter) {
   return db('users_in_game').where(filter);
 }
@@ -38,27 +77,85 @@ function usersInGame(filter) {
 function create(game, user_id) {
   return db('games')
     .insert(game, ['*'])
-    .then(g =>
-      db('users_in_game')
-        .insert({ game_id: g[0].id, user_id })
-        .then(_ => find({ 'g.id': g[0].id }).first())
-    );
+    .then(async g => {
+      await db('users_in_game').insert({ game_id: g[0].id, user_id });
+      return addScore(g[0].id, user_id);
+    });
 }
 
 function join(game_id, user_id) {
   return db('users_in_game')
     .insert({ game_id, user_id })
-    .then(_ => find({ 'g.id': game_id }).first());
+    .then(_ => addScore(game_id, user_id));
 }
 
+function leave(game_id, user_id) {
+  return db('users_in_game')
+    .where({ game_id, user_id })
+    .delete()
+    .then(x => removeScore({ game_id, user_id }));
+}
 function updateLastAction(id) {
   return db('games')
     .where({ id })
     .update({ last_action: new Date() }, ['*']);
 }
 
-function leave(game_id, user_id) {
-  return db('users_in_game')
-    .where({ game_id, user_id })
+function addScore(game_id, user_id) {
+  return db('scores')
+    .insert({ game_id, user_id }, ['*'])
+    .then(_ => findFull({ 'g.id': game_id }, user_id));
+}
+
+function saveScore(filter, newScore) {
+  return db('scores')
+    .where(filter)
+    .update(newScore, ['*'])
+    .then(async g => {
+      await Dice.clearRolls(filter.game_id, filter.user_id);
+      return findFull({ 'g.id': g[0].game_id }, filter.user_id);
+    });
+}
+
+function removeScore(filter) {
+  return db('scores')
+    .where(filter)
     .delete();
+}
+
+async function modifyGameObject(game, user_id) {
+  const diceObj = await db('dice').where({
+    game_id: game.game_id,
+    user_id
+  });
+  const rolls = diceObj.map(o => o.dice);
+  const scoresQuery = await db('scores').where({ game_id: game.game_id });
+  const fullScores = scoresQuery.map(s => {
+    const { id, game_id, ...score } = s;
+    return score;
+  });
+  let leader = {};
+  let lead = 0;
+  let user;
+  let others = [];
+  fullScores.forEach(s => {
+    if (s['Grand Total'] && s['Grand Total'] > lead) {
+      lead = s['Grand Total'];
+      leader = s;
+    }
+    if (s.user_id === user_id) {
+      user = s;
+    } else others.push(s);
+  });
+  console.log('Leader/User: ');
+  console.log(leader, user);
+  const scores = { leader, user, others };
+  const round = await getGameRound({ game_id: game.game_id });
+  const userRound = (await isUsersTurn({
+    game_id: game.game_id,
+    user_id
+  }))
+    ? round
+    : round + 1;
+  return { ...game, scores, round, userRound, rolls };
 }
