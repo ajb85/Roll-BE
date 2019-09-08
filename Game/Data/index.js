@@ -2,13 +2,18 @@ const Scores = require('models/db/scores.js');
 
 module.exports = { getGameRound, isUsersTurn, isPlayableCategory };
 
-async function getGameRound(game_id, user_id) {
-  const scores = await Scores.find({ game_id });
+async function getGameRound({ game_id, user_id, scores }) {
+  if (!scores && !game_id) {
+    return;
+  }
+  if (!scores) {
+    scores = await Scores.find({ game_id });
+  }
   let userRound, lowCount;
   scores.forEach(userScore => {
     let count = 0;
 
-    for (category in userScore) {
+    for (let category in userScore) {
       count =
         userScore[category] && isPlayableCategory(category) ? ++count : count;
     }
@@ -19,12 +24,13 @@ async function getGameRound(game_id, user_id) {
 
     lowCount = !lowCount || count < lowCount ? count : lowCount;
   });
-
+  lowCount = lowCount ? lowCount : 0;
+  userRound = userRound ? userRound : 0;
   return user_id ? userRound <= lowCount : lowCount;
 }
 
-async function isUsersTurn(game_id, user_id) {
-  return await getGameRound(game_id, user_id);
+async function isUsersTurn(gameData) {
+  return await getGameRound(gameData);
 }
 
 function isPlayableCategory(category) {
