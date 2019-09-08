@@ -1,6 +1,7 @@
-module.exports = { updateScoreTotals };
+module.exports = { updateScoreTotals, getDieValue };
 
-function updateScoreTotals(category, score, dice) {
+function updateScoreTotals(category, userScore, dice) {
+  const score = { ...userScore };
   const roundScore = getCategoryScore(category, dice);
   const left = {
     Ones: true,
@@ -13,7 +14,6 @@ function updateScoreTotals(category, score, dice) {
 
   score[category] = roundScore;
   score['Grand Total'] += roundScore; // null + 5 = 5
-
   if (left[category]) {
     score['Left Total'] += roundScore;
     if (!score['Left Bonus'] && score['Left Total'] >= 63) {
@@ -23,10 +23,11 @@ function updateScoreTotals(category, score, dice) {
     }
   }
 
-  if (isRoll(dice) && score['Roll!']) {
-    score['Roll Bonus'] += 50;
+  if (isRoll(dice) && score['Roll!'] && category !== 'Roll!') {
+    score['Roll! Bonus'] += 50;
     score['Grand Total'] += 50;
   }
+  return score;
 }
 
 function getCategoryScore(category, dice) {
@@ -42,12 +43,21 @@ function getCategoryScore(category, dice) {
     'Roll!': () => multiple(5, dice),
     'Full House': () => multiple([2, 3], dice),
     'Sm Straight': () => inARow(4, dice),
-    'Lg Straight': () => inARow(5, dice)
+    'Lg Straight': () => inARow(5, dice),
+    'Free Space': () => freeSpace(dice)
   }[category]();
 }
 
-function getDieValue() {
-  return (Math.round(Math.random() * 1200) % 6) + 1;
+function getDieValue(num) {
+  if (!num) {
+    return (Math.round(Math.random() * 1200) % 6) + 1;
+  }
+
+  const rolls = [];
+  for (let i = 0; i < num; i++) {
+    rolls.push((Math.round(Math.random() * 1200) % 6) + 1);
+  }
+  return rolls;
 }
 
 function single(num, dice) {
@@ -66,11 +76,11 @@ function multiple(num, dice) {
     return count.sort()[count.length - 1] === 3 && count[count.length - 2] === 2
       ? 25
       : 0;
-  } else
-    return count.reduce(
-      (acc, cur, i) => (cur >= num ? (num === 5 ? 50 : cur * (i + 1)) : acc),
-      0
-    );
+  } else {
+    if (count.sort()[count.length - 1] >= num) {
+      return freeSpace(dice);
+    }
+  }
 }
 
 function inARow(num, dice) {
@@ -94,4 +104,8 @@ function inARow(num, dice) {
 
 function isRoll(dice) {
   return dice.length === dice.filter(d => d === dice[0]).length;
+}
+
+function freeSpace(dice) {
+  return dice.reduce((acc, cur) => acc + cur);
 }
