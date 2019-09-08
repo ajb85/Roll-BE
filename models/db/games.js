@@ -112,7 +112,7 @@ function saveScore(filter, newScore) {
     .where(filter)
     .update(newScore, ['*'])
     .then(async g => {
-      await Dice.clearRolls(filter.game_id, filter.user_id);
+      await Dice.clearRolls(filter);
       return findFull({ 'g.id': g[0].game_id }, filter.user_id);
     });
 }
@@ -147,8 +147,6 @@ async function modifyGameObject(game, user_id) {
       user = s;
     } else others.push(s);
   });
-  console.log('Leader/User: ');
-  console.log(leader, user);
   const scores = { leader, user, others };
   const round = await getGameRound({ game_id: game.game_id });
   const userRound = (await isUsersTurn({

@@ -16,8 +16,8 @@ function find(filter) {
   }
 }
 
-function clearRolls(game_id, user_id) {
+function clearRolls(filter) {
   return db('dice')
-    .where(user_id, game_id)
+    .where(filter)
     .del();
 }
