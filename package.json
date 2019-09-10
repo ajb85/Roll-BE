@@ -1,5 +1,5 @@
 {
-  "name": "dadjokesBE",
+  "name": "rollBE",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ajb85/dadjokesBE"
+    "url": "https://github.com/ajb85/Roll-BE"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ajb85/dadjokesBE"
+    "url": "https://github.com/ajb85/Roll-BE"
   },
-  "homepage": "https://github.com/ajb85/dadjokesBE#readme",
+  "homepage": "https://github.com/ajb85/Roll-BE#readme",
   "dependencies": {
     "app-module-path": "^2.2.0",
     "bcrypt": "^3.0.6",
