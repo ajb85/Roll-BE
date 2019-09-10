@@ -70,16 +70,18 @@ function multiple(num, dice) {
   dice.forEach(d => {
     count[d - 1] += 1;
   });
-
+  count.sort();
   if (Array.isArray(num)) {
     // Full House
-    return count.sort()[count.length - 1] === 3 && count[count.length - 2] === 2
+    return count[count.length - 1] === 3 && count[count.length - 2] === 2
       ? 25
       : 0;
   } else {
-    if (count.sort()[count.length - 1] >= num) {
-      return freeSpace(dice);
-    }
+    return count[count.length - 1] >= num
+      ? num === 5
+        ? 50
+        : freeSpace(dice)
+      : 0;
   }
 }
 

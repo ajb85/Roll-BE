@@ -6,26 +6,33 @@ async function getGameRound({ game_id, user_id, scores }) {
   if (!scores && !game_id) {
     return;
   }
-  if (!scores) {
-    scores = await Scores.find({ game_id });
-  }
+
+  scores = scores || (await Scores.find({ game_id }));
   let userRound, lowCount;
   scores.forEach(userScore => {
     let count = 0;
 
     for (let category in userScore) {
       count =
-        userScore[category] && isPlayableCategory(category) ? ++count : count;
+        userScore[category] !== null && isPlayableCategory(category)
+          ? ++count
+          : count;
     }
-
     if (user_id && userScore.user_id === user_id) {
       userRound = count;
     }
 
-    lowCount = !lowCount || count < lowCount ? count : lowCount;
+    lowCount = lowCount === undefined || count < lowCount ? count : lowCount;
   });
-  lowCount = lowCount ? lowCount : 0;
-  userRound = userRound ? userRound : 0;
+  lowCount = lowCount || 0;
+  userRound = userRound || 0;
+  console.log(
+    'Calc User Round: ',
+    user_id,
+    userRound,
+    lowCount,
+    user_id ? userRound <= lowCount : lowCount
+  );
   return user_id ? userRound <= lowCount : lowCount;
 }
 
