@@ -1,7 +1,5 @@
 const db = require('../index.js');
 
-// console.log('DICE GAMES: ', Games);
-
 module.exports = { saveRoll, clearRolls, find };
 
 function saveRoll(game_id, user_id, dice) {

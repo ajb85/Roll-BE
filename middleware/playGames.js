@@ -23,7 +23,9 @@ async function verifyUserInGame(req, res, next) {
     });
   }
 
-  if (game_id && !isUsersTurn({ game_id, user_id })) {
+  const isTurn = await isUsersTurn({ game_id, user_id });
+  console.log('isTurn: ', isTurn);
+  if (game_id && !isTurn) {
     return res
       .status(400)
       .json({ requestType: 'play', message: 'It is not your turn yet.' });
@@ -42,7 +44,7 @@ async function verifyNewRoll(req, res, next) {
     // User out of turns
     return res
       .status(400)
-      .json({ requestType: 'play', message: 'You are  out of rolls.' });
+      .json({ requestType: 'play', message: 'You are out of rolls.' });
   }
 
   const { locked } = req.body;
@@ -65,7 +67,7 @@ async function verifyRound(req, res, next) {
   const { category } = req.body;
   console.log('Category: ', category);
   const score = await Scores.find({ game_id, user_id }).first();
-  if (score[category]) {
+  if (score[category] !== null) {
     return res.status(400).json({
       requestType: 'play',
       message: `You've already submitted a score for that category`
