@@ -2,7 +2,7 @@ const Games = require('models/db/games.js');
 const Dice = require('models/db/dice.js');
 const Scores = require('models/db/scores.js');
 
-const { isUsersTurn, isPlayableCategory } = require('Game/data/');
+const { isUsersTurn, isPlayableCategory } = require('Game/Data/');
 
 module.exports = { verifyNewRoll, verifyRound, verifyUserInGame };
 
