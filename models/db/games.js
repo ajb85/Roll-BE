@@ -1,6 +1,6 @@
 const db = require('../index.js');
 const { getGameRound, isUsersTurn } = require('Game/Data/');
-const Dice = require('./Dice.js');
+const Dice = require('./dice.js');
 
 module.exports = {
   find,
