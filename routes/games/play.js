@@ -19,6 +19,7 @@ router.post(
     const lastRoll = rolls.length
       ? rolls[rolls.length - 1].dice
       : getDieValue(5);
+    //
 
     const newRoll = rolls.length
       ? lastRoll.map((d, i) => (locked[i] ? d : getDieValue()))

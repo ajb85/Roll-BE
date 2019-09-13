@@ -17,3 +17,5 @@ io.on('connection', socket => {
 
 const port = process.env.PORT || 4500;
 server.listen(port, () => console.log(`\n** Running on port ${port} **\n`));
+
+server.on('listening', () => console.log('Listening on port'));

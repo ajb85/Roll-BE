@@ -47,7 +47,7 @@ function getCategoryScore(category, dice) {
     'Free Space': () => freeSpace(dice)
   }[category]();
 }
-
+//
 function getDieValue(num) {
   if (!num) {
     return (Math.round(Math.random() * 1200) % 6) + 1;

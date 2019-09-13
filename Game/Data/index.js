@@ -1,7 +1,7 @@
 const Scores = require('models/db/scores.js');
 
 module.exports = { getGameRound, isUsersTurn, isPlayableCategory };
-
+//
 async function getGameRound({ game_id, user_id, scores }) {
   if (!scores && !game_id) {
     return;
