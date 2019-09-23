@@ -40,8 +40,7 @@ async function verifyJoin(req, res, next) {
       .json({ requestType: 'game', message: 'Game cannot be joined.' });
   }
 
-  if (game.joinable === false) {
-    // long term should be !game.joinable
+  if (!game.isJoinable) {
     res
       .status(400)
       .json({ requestType: 'game', message: 'Game cannot be joined.' });
