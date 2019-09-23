@@ -3,7 +3,7 @@ const http = require('http').createServer(server);
 const io = require('socket.io')(http);
 
 io.on('connection', socket => {
-  console.log('Sockets Online');
+  console.log('Client Connected');
 });
 
 module.exports = { http, io };
