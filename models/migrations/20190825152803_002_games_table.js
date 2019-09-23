@@ -2,12 +2,16 @@ exports.up = function(knex) {
   return knex.schema
     .createTable('games', tbl => {
       tbl.increments();
-      tbl
-        .string('name', 15)
-        .notNullable()
-        .unique();
+      tbl.string('name', 15).notNullable();
       tbl.text('password');
-      tbl.boolean('isJoinable').defaultsTo(true);
+      tbl
+        .boolean('isJoinable')
+        .notNullable()
+        .defaultsTo(true);
+      tbl
+        .boolean('isActive')
+        .notNullable()
+        .defaultTo(true);
       tbl.timestamp('last_action').defaultsTo(knex.fn.now());
     })
     .createTable('users_in_game', tbl => {
