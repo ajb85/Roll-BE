@@ -45,9 +45,8 @@ router.post('/user/join', verifyJoin, async (req, res) => {
 router.post('/user/leave', async (req, res) => {
   const { user_id } = res.locals.token;
   const { game_id } = req.body;
-  await Games.leave(game_id, user_id);
-  const game = await Games.findFull({ 'g.id': game_id }, user_id);
-  console.log('GAME: ', game);
+  const game = await Games.leave(game_id, user_id);
+
   if (!game.players.length || game.players[0] === null) {
     await Games.deactivate(game_id);
   }
