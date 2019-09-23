@@ -12,9 +12,12 @@ async function verifyNewGame(req, res, next) {
       .status(400)
       .json({ requestType: 'game', message: 'New games must have a name' });
   }
+  const existingGame = await Games.simpleFind({
+    name: req.body.name.toString(),
+    isActive: true
+  }).first();
 
-  const existingGame = await Games.find({ name: req.body.name });
-  if (existingGame && existingGame.length) {
+  if (existingGame) {
     console.log('New game, but name already exists');
     return res.status(400).json({
       requestType: 'game',
