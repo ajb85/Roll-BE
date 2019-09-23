@@ -26,13 +26,7 @@ async function getGameRound({ game_id, user_id, scores }) {
   });
   lowCount = lowCount || 0;
   userRound = userRound || 0;
-  console.log(
-    'Calc User Round: ',
-    user_id,
-    userRound,
-    lowCount,
-    user_id ? userRound <= lowCount : lowCount
-  );
+
   return user_id ? userRound <= lowCount : lowCount;
 }
 
