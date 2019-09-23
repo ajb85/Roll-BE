@@ -26,6 +26,7 @@ router.post(
       : lastRoll;
 
     const savedRoll = await Dice.saveRoll(game_id, user_id, newRoll);
+    await Games.updateLastAction(game_id);
     const turnRolls = rolls.map(turn => turn.dice);
     turnRolls.push(savedRoll.dice);
     return res
@@ -48,13 +49,12 @@ router.post(
     const { category } = req.body;
 
     const updatedScore = updateScoreTotals(category, score, lastRoll);
-    console.log('INFO: ', game_id, user_id);
-    console.log('SCORE: ', updatedScore);
+
     const updatedGame = await Games.saveScore(
       { game_id, user_id },
       updatedScore
     );
-    console.log(updatedGame);
+    await Games.updateLastAction(game_id);
 
     res.status(201).json(updatedGame);
 
