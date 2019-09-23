@@ -3,8 +3,10 @@ const { getGameRound, isUsersTurn } = require('Game/Data/');
 const Dice = require('./dice.js');
 
 module.exports = {
+  simpleFind,
   find,
   findFull,
+  deactivate,
   byUserID,
   usersInGame,
   create,
@@ -16,36 +18,31 @@ module.exports = {
   removeScore
 };
 
+function simpleFind(filter) {
+  return filter ? db('games').where(filter) : db('games');
+}
+
 function find(filter) {
-  // return filter
-  if (filter) {
-    return (
-      db('games as g')
+  return filter
+    ? db('games as g')
         .select(
           'g.id as game_id',
           'g.name as name',
           'g.password as password',
           db.raw('ARRAY_AGG(ug.user_id) as players')
-          // db.raw('ARRAY_AGG(ug.user_id) as player_ids')
         )
-        .join('users_in_game as ug', { 'ug.game_id': 'g.id' })
-        // .join()
+        .leftJoin('users_in_game as ug', { 'ug.game_id': 'g.id' })
         .groupBy('g.id')
         .where(filter)
-    );
-  }
-  // .join('users as u', { 'ug.user_id': 'u.id' })
-  return db('games as g')
-    .select(
-      'g.id as game_id',
-      'g.name as name',
-      'g.password as password',
-      'g.last_action as last_action',
-      'g.isJoinable as joinable',
-      'ug.user_id as players'
-    )
-    .join('users_in_game as ug', { 'g.id': 'ug.game_id' });
-  // .join('users as u', { 'ug.user_id': 'u.id' });
+    : db('games as g')
+        .select(
+          'g.id',
+          'g.name as name',
+          'g.password as password',
+          db.raw('ARRAY_AGG(ug.user_id) as players')
+        )
+        .join('users_in_game as ug', { 'ug.game_id': 'g.id' })
+        .groupBy('g.id');
 }
 
 async function findFull(filter, user_id) {
@@ -54,19 +51,27 @@ async function findFull(filter, user_id) {
   return modifyGameObject(game, user_id);
 }
 
+function deactivate(id) {
+  return db('games')
+    .where({ id })
+    .update({ isActive: false }, ['*']);
+}
+
 async function byUserID(user_id) {
   // I don't know how to do these queries so
   // Just writing like this to get it done.
   // Will figure out proper way later
-  const game_ids = await db('users_in_game')
-    .select('game_id')
-    .where({ user_id });
+  const games = await db('users_in_game as ug')
+    .select(
+      'g.id as game_id',
+      'g.name as name',
+      db.raw('ARRAY_AGG(ug.user_id) as players')
+    )
+    .groupBy('g.id')
+    .where({ 'ug.user_id': user_id, 'g.isActive': true })
+    .join('games as g', { 'g.id': 'ug.game_id' });
   return Promise.all(
-    game_ids.map(async ({ game_id }) => {
-      const game = await find({ 'g.id': game_id }).first();
-      delete game.password;
-      return modifyGameObject(game, user_id);
-    })
+    games.map(async game => await modifyGameObject(game, user_id))
   );
 }
 
@@ -93,8 +98,9 @@ function leave(game_id, user_id) {
   return db('users_in_game')
     .where({ game_id, user_id })
     .delete()
-    .then(x => removeScore({ game_id, user_id }));
+    .then(_ => removeScore({ game_id, user_id }));
 }
+
 function updateLastAction(id) {
   return db('games')
     .where({ id })
