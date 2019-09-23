@@ -98,7 +98,11 @@ function leave(game_id, user_id) {
   return db('users_in_game')
     .where({ game_id, user_id })
     .delete()
-    .then(_ => removeScore({ game_id, user_id }));
+    .then(_ =>
+      removeScore({ game_id, user_id }).then(_ =>
+        find({ 'g.id': game_id }).first()
+      )
+    );
 }
 
 function updateLastAction(id) {
