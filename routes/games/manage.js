@@ -29,9 +29,7 @@ router.post('/user/create', verifyNewGame, async (req, res) => {
   if (req.body.password) {
     req.body.password = bcrypt.hashSync(req.body.password, 10);
   }
-
   const newGame = await Games.create(req.body, user_id);
-
   return res.status(201).json(newGame);
 });
 
@@ -47,8 +45,13 @@ router.post('/user/join', verifyJoin, async (req, res) => {
 router.post('/user/leave', async (req, res) => {
   const { user_id } = res.locals.token;
   const { game_id } = req.body;
-  const leaving = await Games.leave(game_id, user_id);
-  return res.status(201).json(leaving);
+  await Games.leave(game_id, user_id);
+  const game = await Games.findFull({ 'g.id': game_id }, user_id);
+  console.log('GAME: ', game);
+  if (!game.players.length || game.players[0] === null) {
+    await Games.deactivate(game_id);
+  }
+  return res.sendStatus(201);
 });
 
 module.exports = router;
