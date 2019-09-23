@@ -5,7 +5,7 @@ module.exports = (req, res, next) => {
   const token = req.headers.authorization;
   jwt.verify(token, secret, (err, decodedToken) => {
     if (err) {
-      res.status(401).json({ message: 'Invalid token' });
+      return res.status(401).json({ message: 'Invalid token' });
     } else {
       res.locals.token = decodedToken;
       next();
