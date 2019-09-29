@@ -6,6 +6,7 @@ module.exports = {
   simpleFind,
   find,
   findFull,
+  edit,
   deactivate,
   byUserID,
   usersInGame,
@@ -29,6 +30,8 @@ function find(filter) {
           'g.id as game_id',
           'g.name as name',
           'g.password as password',
+          'g.isActive as isActive',
+          'g.isJoinable as isJoinable',
           db.raw('ARRAY_AGG(ug.user_id) as players')
         )
         .leftJoin('users_in_game as ug', { 'ug.game_id': 'g.id' })
@@ -39,6 +42,8 @@ function find(filter) {
           'g.id',
           'g.name as name',
           'g.password as password',
+          'g.isActive as isActive',
+          'g.isJoinable as isJoinable',
           db.raw('ARRAY_AGG(ug.user_id) as players')
         )
         .join('users_in_game as ug', { 'ug.game_id': 'g.id' })
@@ -54,7 +59,8 @@ async function findFull(filter, user_id) {
 function deactivate(id) {
   return db('games')
     .where({ id })
-    .update({ isActive: false }, ['*']);
+    .update({ isActive: false }, ['*'])
+    .then(x => findFull({ 'g.id': x[0].id }).first());
 }
 
 async function byUserID(user_id) {
@@ -86,6 +92,13 @@ function create(game, user_id) {
       await db('users_in_game').insert({ game_id: g[0].id, user_id });
       return addScore(g[0].id, user_id);
     });
+}
+
+function edit(filter, updates) {
+  return db('games')
+    .where(filter)
+    .update(updates, ['*'])
+    .then(x => findFull({ 'g.id': x[0].id }).first());
 }
 
 function join(game_id, user_id) {
@@ -134,12 +147,10 @@ function removeScore(filter) {
 }
 
 async function modifyGameObject(game, user_id) {
-  const diceObj = await db('dice').where({
-    game_id: game.game_id,
-    user_id
-  });
+  const { game_id } = game;
+  const diceObj = await db('dice').where({ game_id, user_id });
   const rolls = diceObj.map(o => o.dice);
-  const scoresQuery = await db('scores').where({ game_id: game.game_id });
+  const scoresQuery = await db('scores').where({ game_id });
   const fullScores = scoresQuery.map(s => {
     const { id, game_id, ...score } = s;
     return score;
@@ -148,6 +159,7 @@ async function modifyGameObject(game, user_id) {
   let lead = 0;
   let user;
   let others = [];
+
   fullScores.forEach(s => {
     if (s['Grand Total'] && s['Grand Total'] > lead) {
       lead = s['Grand Total'];
@@ -157,6 +169,7 @@ async function modifyGameObject(game, user_id) {
       user = s;
     } else others.push(s);
   });
+
   const scores = { leader, user, others };
   const round = await getGameRound({ game_id: game.game_id });
   const userRound = (await isUsersTurn({
