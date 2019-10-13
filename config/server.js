@@ -4,15 +4,15 @@ const cors = require('cors');
 const server = express();
 
 // Middleware
-const errorHandler = require('./middleware/errorHandling.js');
-const auth = require('./middleware/authenticate.js');
+const errorHandler = require('middleware/errorHandling.js');
+const auth = require('middleware/authenticate.js');
 
 // Outerware - yes, I made this up
-const removePassword = require('./outerware/removePassword.js');
+const removePassword = require('outerware/removePassword.js');
 
 // Routes
-const authRouter = require('./routes/auth/');
-const gamesRouter = require('./routes/games/');
+const authRouter = require('routes/auth');
+const gamesRouter = require('routes/games');
 
 server.use(helmet());
 server.use(express.json());

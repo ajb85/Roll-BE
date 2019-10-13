@@ -53,14 +53,15 @@ function find(filter) {
 async function findFull(filter, user_id) {
   if (!filter) return;
   const game = await find(filter).first();
-  return modifyGameObject(game, user_id);
+  return game
+    ? modifyGameObject(game, user_id)
+    : console.error("CANNOT FIND FULL, GAME DOESN'T EXIST");
 }
 
 function deactivate(id) {
   return db('games')
     .where({ id })
-    .update({ isActive: false }, ['*'])
-    .then(x => findFull({ 'g.id': x[0].id }).first());
+    .update({ isActive: false }, ['*']);
 }
 
 async function byUserID(user_id) {
@@ -150,17 +151,18 @@ async function modifyGameObject(game, user_id) {
   const { game_id } = game;
   const diceObj = await db('dice').where({ game_id, user_id });
   const rolls = diceObj.map(o => o.dice);
-  const scoresQuery = await db('scores').where({ game_id });
-  const fullScores = scoresQuery.map(s => {
-    const { id, game_id, ...score } = s;
-    return score;
-  });
+  const fullScores = await db('scores').where({ game_id });
+  // const fullScores = scoresQuery.map(s => {
+  //   const { id, game_id, ...score } = s;
+  //   return score;
+  // });
   let leader = {};
   let lead = 0;
   let user;
   let others = [];
 
-  fullScores.forEach(s => {
+  fullScores.forEach(score => {
+    const { id, game_id, ...s } = score;
     if (s['Grand Total'] && s['Grand Total'] > lead) {
       lead = s['Grand Total'];
       leader = s;

@@ -13,7 +13,13 @@ async function verifyUserInGame(req, res, next) {
   const game = await Games.find({ game_id }).first();
 
   if (!game) {
-    res.status(404).json({ message: 'Game not found' });
+    return res.status(404).json({ message: 'Game not found' });
+  }
+
+  if (!game.isActive) {
+    return res
+      .status(400)
+      .json({ requestType: 'play', message: 'Game is no longer active.' });
   }
   if (game_id && !_isPlayerInGame(game_id, user_id)) {
     return res.status(400).json({

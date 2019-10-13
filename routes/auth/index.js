@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 
-const Users = require('../../models/db/users.js');
-const generateToken = require('../../config/generateToken.js');
-const { verifyAccountInfo } = require('../../middleware/accounts.js');
-const { isValidEmail } = require('../../config/inputEvaluation.js');
+const Users = require('models/db/users.js');
+const generateToken = require('tools/generateToken.js');
+const { verifyAccountInfo } = require('middleware/accounts.js');
+const { isValidEmail } = require('tools/inputEvaluation.js');
 
 router.post('/', verifyAccountInfo, async (req, res) => {
   const { username, email, account, password } = res.locals.user;

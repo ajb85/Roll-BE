@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
-
 const Games = require('../models/db/games.js');
+
 module.exports = { verifyNewGame, verifyJoin };
 
 async function verifyNewGame(req, res, next) {
