@@ -1,7 +1,4 @@
-const {
-  isValidEmail,
-  isValidUsername
-} = require('../config/inputEvaluation.js');
+const { isValidEmail, isValidUsername } = require('tools/inputEvaluation.js');
 const Users = require('../models/db/users');
 
 module.exports = { parseInput, verifyAccountInfo };
