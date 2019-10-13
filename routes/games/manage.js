@@ -4,10 +4,10 @@ const bcrypt = require('bcrypt');
 const Games = require('models/db/games.js');
 const Dice = require('models/db/dice.js');
 
-const Sockets = require('../../sockets/index.js');
+const Sockets = require('sockets/');
 
 const { verifyNewGame, verifyJoin } = require('middleware/manageGames.js');
-console.log('SOCKETS: ', Sockets);
+
 router.route('/').get(async (req, res) => {
   const { user_id } = res.locals.token;
   const publicGamesList = await Games.find({ password: null });

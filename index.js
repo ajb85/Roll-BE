@@ -7,7 +7,7 @@ require('express-async-errors');
 // Allow absolute imports
 require('app-module-path').addPath(__dirname);
 
-// Sockets
+require('config/api.js');
 const http = require('config/http.js');
 
 const port = process.env.PORT || 4500;
