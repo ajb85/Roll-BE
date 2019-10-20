@@ -22,8 +22,11 @@ router.route('/').get(async (req, res) => {
 router.get('/user', async (req, res) => {
   const { user_id } = res.locals.token;
   const userGames = await Games.byUserID(user_id);
+  const gamesList = userGames.map(({ name }) => name);
 
-  res.status(200).json(userGames);
+  Sockets.listenToGamesList({ user_id }, gamesList);
+
+  return res.status(200).json(userGames);
 });
 
 router.post('/user/create', verifyNewGame, async (req, res) => {
@@ -56,6 +59,7 @@ router.post('/user/leave', async (req, res) => {
 
   if (!game.players.length || game.players[0] === null) {
     await Games.deactivate(game_id);
+    Sockets.leave({ user_id }, game.name);
   }
   return res.sendStatus(201);
 });

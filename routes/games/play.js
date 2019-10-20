@@ -3,9 +3,12 @@ const router = require('express').Router();
 const Users = require('models/db/users.js');
 const Games = require('models/db/games.js');
 const Dice = require('models/db/dice.js');
+
 const { verifyNewRoll, verifyRound } = require('middleware/playGames.js');
 const { updateScoreTotals, getDieValue } = require('Game/Mechanics/');
 const { verifyUserInGame } = require('middleware/playGames.js');
+
+const Sockets = require('sockets/');
 
 router.post(
   '/:game_id/rollDice',
@@ -61,24 +64,33 @@ router.post(
       const { wins } = await Users.retrieve({
         id: finished.scores.leader.user_id
       });
+
       await Users.edit(
         { id: finished.scores.leader.user_id },
         { wins: wins + 1 }
       );
+
       const { losses } = await Users.retrieve({
         id: finished.scores.user.user_id
       });
+
       await Users.edit(
         { id: finished.scores.user.user_id },
         { losses: losses + 1 }
       );
 
-      finished.scores.others.forEach(async ({ user_id: id }) => {
-        const { losses } = await Users.retrieve({ id });
-        await Users.edit({ id }, { losses: losses + 1 });
-      });
+      finished.scores.others.reduce(
+        (acc, { user_id: id }) =>
+          acc.then(async _ => {
+            const { losses } = await Users.retrieve({ id });
+            return await Users.edit({ id }, { losses: losses + 1 });
+          }),
+        Promise.resolve()
+      );
     }
+
     await Games.updateLastAction(game_id);
+    Sockets.sendTurn({ user_id }, updatedGame);
     return res.status(201).json(updatedGame);
 
     // Save score
