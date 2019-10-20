@@ -7,6 +7,7 @@ class SocketsManager {
     this.io = io;
     this.connected = {};
     this.userToSocket = {};
+
     this.startListeners();
   }
 
@@ -21,22 +22,49 @@ class SocketsManager {
     });
   }
 
-  getSocketByUserID(user_id) {
+  join(userData, room) {
+    const socket_id = this._getSocketIDFromUserData(userData);
+    const socket = this.connected[socket_id];
+
+    socket.join(room);
+    this.emitToRoom(socket_id, room, 'userJoined', socket.user.username);
+  }
+
+  leave(userData, room) {
+    const socket_id = this._getSocketIDFromUserData(userData);
+    const socket = this.connected[socket_id];
+
+    socket.leave(room);
+    this.emitToRoom(socket.id, room, 'userLeft', socket.user.username);
+  }
+
+  emitToRoom(socket_id, room, context, message) {
+    this.connected[socket_id].to(room).emit(context, message);
+  }
+
+  sendTurn(userData, turnData) {
+    const socket_id = this._getSocketIDFromUserData(userData);
+    this.emitToRoom(socket_id, turnData.name, 'turns', turnData);
+  }
+
+  listenToGamesList(userData, games) {
+    const socket = this.connected[this._getSocketIDFromUserData(userData)];
+
+    if (socket) {
+      games.forEach(room => socket.join(room));
+    }
+  }
+
+  getSocketIDByUserID(user_id) {
     return this.userToSocket[user_id];
   }
 
-  join({ user_id, socket_id }, room) {
-    if (!socket_id) {
-      socket_id = this.getSocketByUserID(user_id);
-    }
-
-    if (this.socketIsConnected(socket_id)) {
-      this.connected[socket_id].join(room);
-    }
+  isSocketConnected(socket_id) {
+    return this.connected[socket_id];
   }
 
-  socketIsConnected(socket_id) {
-    return this.connected[socket_id];
+  _getSocketIDFromUserData({ user_id, socket_id }) {
+    return user_id ? getSocketByUserID(user_id) : socket_id;
   }
 }
 
