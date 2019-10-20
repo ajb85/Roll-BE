@@ -1,10 +1,13 @@
 const jwt = require('jsonwebtoken');
 const secret = require('config/secret.js');
+const Users = require('models/db/users.js');
 
 class Socket {
   constructor(socket, user_id) {
     this.socket = socket;
-    this.user_id = user_id;
+    this.user = Users.find({ 'u.id': user_id })
+      .first()
+      .then(u => u);
   }
 
   join(room) {
