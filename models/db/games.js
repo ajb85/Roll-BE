@@ -35,8 +35,8 @@ function find(filter) {
           db.raw('ARRAY_AGG(ug.user_id) as players')
         )
         .leftJoin('users_in_game as ug', { 'ug.game_id': 'g.id' })
-        .groupBy('g.id')
-        .where(filter)
+        // .groupBy('ug.user_id')
+        .where({ ...filter, 'g.isActive': true })
     : db('games as g')
         .select(
           'g.id',
@@ -46,8 +46,8 @@ function find(filter) {
           'g.isJoinable as isJoinable',
           db.raw('ARRAY_AGG(ug.user_id) as players')
         )
-        .join('users_in_game as ug', { 'ug.game_id': 'g.id' })
-        .groupBy('g.id');
+        .join('users_in_game as ug', { 'ug.game_id': 'g.id' });
+  // .groupBy('g.id');
 }
 
 async function findFull(filter, user_id) {
@@ -59,6 +59,12 @@ async function findFull(filter, user_id) {
 }
 
 function deactivate(id) {
+  db('scores')
+    .where({ game_id: id })
+    .del();
+  db('users_in_game')
+    .where({ game_id: id })
+    .del();
   return db('games')
     .where({ id })
     .update({ isActive: false }, ['*']);
