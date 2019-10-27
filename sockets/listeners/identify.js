@@ -4,15 +4,12 @@ const Users = require('models/db/users.js');
 
 class Socket {
   constructor(socket, user_id) {
-    this.socket = socket;
+    for (let key in socket) {
+      this[key] = socket[key];
+    }
     this.user = Users.find({ 'u.id': user_id })
       .first()
       .then(u => u);
-  }
-
-  join(room) {
-    console.log('JOINING: ', room);
-    this.socket.join(room);
   }
 }
 
@@ -22,6 +19,11 @@ module.exports = function(socket, token) {
       if (!err) {
         const { user_id } = decodedToken;
         this.connected[socket.id] = new Socket(socket, user_id);
+        this.connected[socket.id].user.then(u => {
+          if (u) {
+            console.log('IDENTIFIED SOCKET: ', u.username);
+          }
+        });
         this.userToSocket[user_id] = socket.id;
       }
     });
