@@ -22,6 +22,7 @@ router.route('/').get(async (req, res) => {
 router.get('/user', async (req, res) => {
   const { user_id } = res.locals.token;
   const userGames = await Games.byUserID(user_id);
+  console.log('FOUND USER GAMES: ', userGames);
   const gamesList = userGames.map(({ name }) => name);
 
   Sockets.listenToGamesList({ user_id }, gamesList);
