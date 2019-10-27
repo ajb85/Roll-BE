@@ -64,7 +64,7 @@ class SocketsManager {
   }
 
   _getSocketIDFromUserData({ user_id, socket_id }) {
-    return user_id ? getSocketByUserID(user_id) : socket_id;
+    return user_id ? this.getSocketIDByUserID(user_id) : socket_id;
   }
 }
 
