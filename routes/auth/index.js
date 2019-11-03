@@ -27,8 +27,7 @@ router.post('/', verifyAccountInfo, async (req, res) => {
     /* LOGIN TO EXISTING ACCOUNT */
   } else if (account) {
     const key = isValidEmail(account) ? 'u.email' : 'u.username';
-    console.log('USER QUERY');
-    const user = await Users.find({ [key]: account }, true); //.first();
+    const user = await Users.find({ [key]: account }, true);
     if (user && bcrypt.compareSync(password, user.password)) {
       delete user.password;
       return res.status(200).json({
