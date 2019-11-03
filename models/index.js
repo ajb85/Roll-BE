@@ -24,21 +24,21 @@ module.exports = class Query {
     this.client = client;
     this.table = table;
     this.values = [];
+    this.text = '';
 
     // Listed for ease of reading
     this.first;
-    this.text;
-    this.then;
+    this.callback;
   }
 
   run() {
     console.log('QUERY: ', this.text);
     console.log('VALUES: ', this.values);
-    return client
+    return this.client
       .query({ text: this.text, values: this.values })
       .then(res => {
         const data = this.first ? res.rows[0] : res.rows;
-        return this.then ? this.then(data) : data;
+        return this.callback ? this.callback(data) : data;
       })
       .catch(err => console.error('QUERY ERROR: ', err));
   }
@@ -53,7 +53,7 @@ module.exports = class Query {
       return this;
     }
     this.text = 'UPDATE ' + this.table + this.text;
-    this.text += this._iterate('SET', newInfo, ',');
+    this.text += this._iterateEquals('SET', newInfo, ',');
     this.text += this._returning(returnValues);
     return this;
   }
@@ -62,8 +62,8 @@ module.exports = class Query {
     if (!newUser || !Object.keys(newUser).length) {
       return this;
     }
-    this.text = 'INSERT INTO ' + this.table + this.text;
-    this.text += this._iterate('(', newUser, ',');
+    this.text = 'INSERT INTO ' + this.table;
+    this.text += this._iterateColumnsAndValues(newUser);
     this.text += this._returning(returnValues);
     return this;
   }
@@ -80,7 +80,7 @@ module.exports = class Query {
       return this;
     }
 
-    const whereClause = this._iterate('WHERE', filter, ' AND');
+    const whereClause = this._iterateEquals('WHERE', filter, ' AND');
     this.text += whereClause;
     return this;
   }
@@ -91,11 +91,11 @@ module.exports = class Query {
   }
 
   then(cb) {
-    this.then = cb;
+    this.callback = cb;
     return this;
   }
 
-  _iterate(startTerm, data, joinTerm) {
+  _iterateEquals(startTerm, data, joinTerm) {
     const keys = Object.keys(data);
     let str = ' ' + startTerm;
 
@@ -113,11 +113,24 @@ module.exports = class Query {
     return str;
   }
 
+  _iterateColumnsAndValues(data) {
+    const keys = Object.keys(data);
+    const values = [];
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      const index = this.values.length + 1;
+      this.values.push(data[key]);
+      values.push(`$${index}`);
+    }
+
+    return '(' + keys.join(', ') + ') VALUES(' + values.join(', ') + ')';
+  }
+
   _returning(arg) {
     if (!arg.length) {
       arg = ['*'];
     }
-
     return ` RETURNING ${arg.join(', ')}`;
   }
 };
