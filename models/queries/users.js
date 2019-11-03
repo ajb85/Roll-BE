@@ -15,14 +15,14 @@ function edit(filter, newInfo) {
     .update(newInfo)
     .where(filter)
     .first(true)
-    .then(u => find({ 'u.user': u.id }, true))
+    .then(u => find({ 'u.id': u.id }, true))
     .run();
 }
 
 function create(newUser) {
   return new Query('users')
     .insert(newUser)
-    .then(u => find({ 'u.user': u.id }, true))
+    .then(u => find({ 'u.id': u.id }, true))
     .run();
 }
 
