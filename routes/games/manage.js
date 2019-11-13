@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 
-const Games = require('models/db/games.js');
-const Dice = require('models/db/dice.js');
+const Games = require('models/queries/games.js');
+const Dice = require('models/queries/dice.js');
 
 const Sockets = require('sockets/');
 
@@ -21,8 +21,7 @@ router.route('/').get(async (req, res) => {
 
 router.get('/user', async (req, res) => {
   const { user_id } = res.locals.token;
-  const userGames = await Games.byUserID(user_id);
-  console.log('FOUND USER GAMES: ', userGames);
+  const userGames = await Games.find({ 'g.id': 1 });
   const gamesList = userGames.map(({ name }) => name);
 
   Sockets.listenToGamesList({ user_id }, gamesList);
