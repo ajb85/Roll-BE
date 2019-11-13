@@ -1,6 +1,6 @@
 const { client, cb } = require('../index.js');
 
-module.exports = { saveRoll, clearRolls, find };
+module.exports = { saveRoll };
 
 function saveRoll(game_id, user_id, dice) {
   const query = {
