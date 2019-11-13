@@ -1,15 +1,13 @@
 const jwt = require('jsonwebtoken');
 const secret = require('config/secret.js');
-const Users = require('models/db/users.js');
+const Users = require('models/queries/users.js');
 
 class Socket {
   constructor(socket, user_id) {
     for (let key in socket) {
       this[key] = socket[key];
     }
-    this.user = Users.find({ 'u.id': user_id })
-      .first()
-      .then(u => u);
+    this.user = Users.find({ 'u.id': user_id }, true).then(u => u);
   }
 }
 
