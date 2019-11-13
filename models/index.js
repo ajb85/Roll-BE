@@ -43,8 +43,23 @@ module.exports = class Query {
       .catch(err => console.error('QUERY ERROR: ', err));
   }
 
-  select(select) {
-    this.text = `SELECT ${select} FROM ${this.table}`;
+  select(...select) {
+    const formattedStr = select
+      .map(x => {
+        const toSplit =
+          x.indexOf('AS') > 0 ? ' AS ' : x.indexOf('as') ? ' as ' : ' ';
+        const split = x.split(toSplit);
+        if (split[0] === '*') {
+          return x;
+        }
+        if (split.length <= 1) {
+          return `"${x}"`;
+        }
+        return split.map(y => this._dotQuotes(y)).join(toSplit);
+      })
+      .join(', ');
+
+    this.text = `SELECT ${formattedStr} FROM ${this.table}`;
     return this;
   }
 
@@ -95,9 +110,106 @@ module.exports = class Query {
     return this;
   }
 
+  join(table, conditions, joinType = 'INNER') {
+    this.text += ` ${joinType.toUpperCase()} JOIN ${table}${this._iterateEqualsLiteral(
+      'ON',
+      conditions,
+      ' AND'
+    )}`;
+    return this;
+  }
+
+  groupBy(...arg) {
+    this.text += ` GROUP BY ${arg.join(', ')}`;
+    return this;
+  }
+
+  _dotQuotes(str) {
+    const openParensIndex = str.indexOf('(');
+    if (openParensIndex > -1) {
+      const closeParensIndex = str.lastIndexOf(')');
+      if (
+        str.substring(0, openParensIndex).toLowerCase() === 'json_build_object'
+      ) {
+        return `${str.substring(0, openParensIndex + 1)}${this._buildObject(
+          str.substring(openParensIndex + 1, closeParensIndex).split(', ')
+        )})`;
+      }
+      return `${str.substring(0, openParensIndex + 1)}${this._dotQuotes(
+        str.substring(openParensIndex + 1, closeParensIndex)
+      )}${str.substring(closeParensIndex)}`;
+    }
+
+    const commaIndex = str.indexOf(',');
+    if (commaIndex > -1) {
+      return str
+        .split(', ')
+        .map(x => this._dotQuotes(x))
+        .join(', ');
+    }
+
+    const dotIndex = str.indexOf('.');
+    if (dotIndex > 0) {
+      const afterDotStr = str.substring(dotIndex + 1);
+      const parensIndex = str.indexOf(')');
+
+      const quotationsStr =
+        parensIndex === -1
+          ? afterDotStr === '*'
+            ? afterDotStr
+            : `"${afterDotStr}"`
+          : `"${str.substring(dotIndex + 1, parensIndex)}"${y.substring(
+              parensIndex
+            )}`;
+      return `${str.substring(0, dotIndex + 1)}${quotationsStr}`;
+    } else {
+      return str[0] === '"' || str[0] === "'"
+        ? str
+        : str[0] === '/'
+        ? str.substring(1, str.length - 1)
+        : `"${str}"`;
+    }
+  }
+
   _iterateEquals(startTerm, data, joinTerm) {
     const keys = Object.keys(data);
-    let str = ' ' + startTerm;
+    let str = startTerm ? ' ' + startTerm : '';
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+
+      if (i > 0) {
+        str += joinTerm;
+      }
+
+      this.values.push(
+        typeof data[key] === 'string' ? this._dotQuotes(data[key]) : data[key]
+      );
+      str += ` ${this._dotQuotes(key)} = $${this.values.length}`;
+    }
+    return str;
+  }
+
+  _buildObject(arr) {
+    let str = '';
+    for (let i = 0; i < arr.length; i += 2) {
+      // Will ignore mismatched number of key/value pairs
+      const key = arr[i];
+      const value = arr[i + 1];
+
+      if (i > 0) {
+        str += ', ';
+      }
+
+      // this.values.push(key);
+      str += `${key}, ${this._dotQuotes(value)}`;
+    }
+    return str;
+  }
+
+  _iterateEqualsLiteral(startTerm, data, joinTerm) {
+    const keys = Object.keys(data);
+    let str = startTerm ? ' ' + startTerm : '';
 
     for (let i = 0; i < keys.length; i++) {
       const index = this.values.length + 1;
@@ -107,8 +219,7 @@ module.exports = class Query {
         str += joinTerm;
       }
 
-      str += ` ${key} = $${index}`;
-      this.values.push(data[key]);
+      str += ` ${key} = ${data[key]}`;
     }
     return str;
   }
