@@ -1,8 +1,8 @@
 const router = require('express').Router();
 
-const Users = require('models/db/users.js');
-const Games = require('models/db/games.js');
-const Dice = require('models/db/dice.js');
+const Users = require('models/queries/users.js');
+const Games = require('models/queries/games.js');
+const Dice = require('models/queries/dice.js');
 
 const { verifyNewRoll, verifyRound } = require('middleware/playGames.js');
 const { updateScoreTotals, getDieValue } = require('Game/Mechanics/');
@@ -24,11 +24,11 @@ router.post(
       ? rolls[rolls.length - 1].dice
       : getDieValue(5);
 
-    const newRoll = rolls.length
+    const dice = rolls.length
       ? lastRoll.map((d, i) => (locked[i] ? d : getDieValue()))
       : lastRoll;
-
-    const savedRoll = await Dice.saveRoll(game_id, user_id, newRoll);
+    console.log('SAVING ROLL');
+    const savedRoll = await Dice.saveRoll({ game_id, user_id, dice });
     await Games.updateLastAction(game_id);
     const turnRolls = rolls.map(turn => turn.dice);
     turnRolls.push(savedRoll.dice);
@@ -61,29 +61,17 @@ router.post(
     if (updatedGame.round === 13) {
       const finished = await Games.deactivate(game_id);
       console.log('FINISHED GAME: ', finished);
-      const { wins } = await Users.retrieve({
-        id: finished.scores.leader.user_id
-      });
 
-      await Users.edit(
-        { id: finished.scores.leader.user_id },
-        { wins: wins + 1 }
+      const users = await Promise.all(
+        finished.scores.map(s => Users.find({ id: s.user_id }, true))
       );
 
-      const { losses } = await Users.retrieve({
-        id: finished.scores.user.user_id
-      });
-
-      await Users.edit(
-        { id: finished.scores.user.user_id },
-        { losses: losses + 1 }
-      );
-
-      finished.scores.others.reduce(
-        (acc, { user_id: id }) =>
-          acc.then(async _ => {
-            const { losses } = await Users.retrieve({ id });
-            return await Users.edit({ id }, { losses: losses + 1 });
+      await users.reduce(
+        (acc, u, i) =>
+          acc.then(_ => {
+            const update =
+              i === 0 ? { wins: u.wins + 1 } : { losses: u.losses + 1 };
+            Users.edit({ id: u.id }, update);
           }),
         Promise.resolve()
       );

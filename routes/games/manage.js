@@ -21,7 +21,9 @@ router.route('/').get(async (req, res) => {
 
 router.get('/user', async (req, res) => {
   const { user_id } = res.locals.token;
-  const userGames = await Games.find({ 'g.id': 1 });
+  const userGames = await Games.find({ 'u.id': user_id, 'g.isActive': true });
+  console.log('GETTING GAMES');
+
   const gamesList = userGames.map(({ name }) => name);
 
   Sockets.listenToGamesList({ user_id }, gamesList);
@@ -46,7 +48,6 @@ router.post('/user/join', verifyJoin, async (req, res) => {
   const { game } = res.locals;
 
   const joined = await Games.join(game.game_id, user_id);
-
   Sockets.join({ user_id }, joined.name);
 
   return res.status(201).json(joined);
