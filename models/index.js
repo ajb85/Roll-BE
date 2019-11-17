@@ -29,15 +29,23 @@ module.exports = class Query {
     // Listed for ease of reading
     this.first;
     this.callback;
+    this.returning;
   }
 
   run() {
     console.log('QUERY: ', this.text);
     console.log('VALUES: ', this.values);
+    if (this.returning) {
+      this.text += ` RETURNING ${this.returning}`;
+    }
+
     return this.client
       .query({ text: this.text, values: this.values })
       .then(res => {
         const data = this.first ? res.rows[0] : res.rows;
+        if (!this.callback) {
+          console.log('RETURNING DATA: ', data);
+        }
         return this.callback ? this.callback(data) : data;
       })
       .catch(err => console.error('QUERY ERROR: ', err));
@@ -67,19 +75,20 @@ module.exports = class Query {
     if (!newInfo || !Object.keys(newInfo).length) {
       return this;
     }
+
     this.text = 'UPDATE ' + this.table + this.text;
     this.text += this._iterateEquals('SET', newInfo, ',');
-    this.text += this._returning(returnValues);
+    this._returning(returnValues);
     return this;
   }
 
   insert(newUser, ...returnValues) {
-    if (!newUser || !Object.keys(newUser).length) {
-      return this;
+    if (newUser && Object.keys(newUser).length) {
+      this.text = 'INSERT INTO ' + this.table;
+      this.text += this._iterateColumnsAndValues(newUser);
+      this._returning(returnValues);
     }
-    this.text = 'INSERT INTO ' + this.table;
-    this.text += this._iterateColumnsAndValues(newUser);
-    this.text += this._returning(returnValues);
+
     return this;
   }
 
@@ -125,16 +134,22 @@ module.exports = class Query {
   }
 
   _dotQuotes(str) {
+    console.log('STR: ', str);
+    const exitString = {
+      json_build_object: true,
+      row_to_json: true
+    };
     const openParensIndex = str.indexOf('(');
     if (openParensIndex > -1) {
       const closeParensIndex = str.lastIndexOf(')');
-      if (
-        str.substring(0, openParensIndex).toLowerCase() === 'json_build_object'
-      ) {
+      const aggFunctionName = str.substring(0, openParensIndex).toLowerCase();
+      console.log('AGG FUNCTION: ', aggFunctionName);
+      if (exitString[aggFunctionName]) {
         return `${str.substring(0, openParensIndex + 1)}${this._buildObject(
           str.substring(openParensIndex + 1, closeParensIndex).split(', ')
         )})`;
       }
+      console.log('FAILED EXIT STRING');
       return `${str.substring(0, openParensIndex + 1)}${this._dotQuotes(
         str.substring(openParensIndex + 1, closeParensIndex)
       )}${str.substring(closeParensIndex)}`;
@@ -182,15 +197,18 @@ module.exports = class Query {
         str += joinTerm;
       }
 
-      this.values.push(
-        typeof data[key] === 'string' ? this._dotQuotes(data[key]) : data[key]
-      );
+      // typeof data[key] === 'string' ? this._dotQuotes(data[key]) : data[key]
+      this.values.push(data[key]);
       str += ` ${this._dotQuotes(key)} = $${this.values.length}`;
     }
     return str;
   }
 
   _buildObject(arr) {
+    if (arr.length <= 1) {
+      return arr.join('');
+    }
+
     let str = '';
     for (let i = 0; i < arr.length; i += 2) {
       // Will ignore mismatched number of key/value pairs
@@ -242,6 +260,6 @@ module.exports = class Query {
     if (!arg.length) {
       arg = ['*'];
     }
-    return ` RETURNING ${arg.join(', ')}`;
+    this.returning = arg.join(', ');
   }
 };
