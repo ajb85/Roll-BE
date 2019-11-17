@@ -1,12 +1,25 @@
-const { client, cb } = require('../index.js');
+const Query = require('../index.js');
 
-module.exports = { saveRoll };
+module.exports = { find, saveRoll, clearRolls };
 
-function saveRoll(game_id, user_id, dice) {
-  const query = {
-    text: 'INSERT INTO DICE(game_id, user_id, dice) VALUE($1, $2)',
-    values: [game_id, user_id, dice]
-  };
+function find(filter, first) {
+  return new Query('dice')
+    .select('*')
+    .where(filter)
+    .first(first)
+    .run();
+}
 
-  return client.query(query, cb);
+function saveRoll(newRoll) {
+  return (
+    new Query('dice')
+      .insert(newRoll)
+      .first(true)
+      // .then(d => find({ id: d.id }))
+      .run()
+  );
+}
+
+function clearRolls(filter) {
+  return new Query('dice').delete(filter).run();
 }
