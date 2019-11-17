@@ -1,4 +1,4 @@
-const Scores = require('models/db/scores.js');
+const Scores = require('models/queries/scores.js');
 
 module.exports = { getGameRound, isUsersTurn, isPlayableCategory };
 //
