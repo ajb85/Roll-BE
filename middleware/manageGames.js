@@ -35,7 +35,7 @@ async function verifyJoin(req, res, next) {
   const { user_id } = res.locals.token;
   const { name, password } = req.body;
 
-  const game = await Games.find({ 'g.name': name }, true);
+  const game = await Games.find({ 'g.name': name, 'g.isActive': true }, true);
 
   if (!game) {
     return res

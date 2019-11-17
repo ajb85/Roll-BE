@@ -1,6 +1,6 @@
-const Games = require('models/db/games.js');
-const Dice = require('models/db/dice.js');
-const Scores = require('models/db/scores.js');
+const Games = require('models/queries/games.js');
+const Dice = require('models/queries/dice.js');
+const Scores = require('models/queries/scores.js');
 
 const { isUsersTurn, isPlayableCategory } = require('Game/Data/');
 
@@ -9,9 +9,9 @@ module.exports = { verifyNewRoll, verifyRound, verifyUserInGame };
 async function verifyUserInGame(req, res, next) {
   const { user_id } = res.locals.token;
   const { game_id } = req.params;
-
-  const game = await Games.find({ game_id }).first();
-
+  console.log('FINDING GAME');
+  const game = await Games.find({ 'g.id': game_id }, true);
+  console.log('GAME FOUND');
   if (!game) {
     return res.status(404).json({ message: 'Game not found' });
   }
@@ -28,7 +28,7 @@ async function verifyUserInGame(req, res, next) {
       message: 'You are not in this game.'
     });
   }
-
+  console.log('CALCULATING USER TURN');
   const isTurn = await isUsersTurn({ game_id, user_id });
   console.log('isTurn: ', isTurn);
   if (game_id && !isTurn) {
@@ -71,8 +71,8 @@ async function verifyRound(req, res, next) {
   const { user_id } = res.locals.token;
   const { game_id } = req.params;
   const { category } = req.body;
-  console.log('Category: ', category);
-  const score = await Scores.find({ game_id, user_id }).first();
+
+  const score = await Scores.find({ game_id, user_id }, true);
   if (score[category] !== null) {
     return res.status(400).json({
       requestType: 'play',
@@ -87,6 +87,7 @@ async function verifyRound(req, res, next) {
   }
 
   const rolls = await Dice.find({ game_id, user_id });
+
   if (!rolls || !rolls.length) {
     return res
       .status(400)
@@ -100,6 +101,6 @@ async function verifyRound(req, res, next) {
 }
 
 async function _isPlayerInGame(game_id, user_id) {
-  const game = await Games.find({ 'g.id': game_id }).first();
+  const game = await Games.find({ 'g.id': game_id }, true);
   return !!game.players.find(id => parseInt(id, 10) === parseInt(user_id, 10));
 }
