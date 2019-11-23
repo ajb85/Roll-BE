@@ -16,7 +16,7 @@ function find(filter, first) {
     )
     .join('users_in_game AS ug', { 'ug.game_id': 'g.id' }, 'LEFT')
     .join('scores AS s', { 's.game_id': 'g.id' }, 'LEFT')
-    .join('users AS u', { 'u.id': 'ug.user_id' }, 'FULL OUTER')
+    .join('users AS u', { 'u.id': 'ug.user_id' }, 'LEFT')
     .where(filter)
     .groupBy('g.id', 'ug.game_id')
     .first(first)
