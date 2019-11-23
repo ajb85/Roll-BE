@@ -51,6 +51,10 @@ module.exports = class Query {
       .catch(err => console.error('QUERY ERROR: ', err));
   }
 
+  table(table) {
+    this.table = table;
+  }
+
   select(...select) {
     const formattedStr = select
       .map(x => {
@@ -61,13 +65,17 @@ module.exports = class Query {
           return x;
         }
         if (split.length <= 1) {
-          return `"${x}"`;
+          return this._dotQuotes(x);
         }
         return split.map(y => this._dotQuotes(y)).join(toSplit);
       })
       .join(', ');
 
-    this.text = `SELECT ${formattedStr} FROM ${this.table}`;
+    if (this.text.length) {
+      this.text += ' ';
+    }
+
+    this.text += `SELECT ${formattedStr} FROM ${this.table}`;
     return this;
   }
 
@@ -133,8 +141,16 @@ module.exports = class Query {
     return this;
   }
 
+  raw(text) {
+    if (this.text.length) {
+      this.text += ' ';
+    }
+    this.text += text;
+
+    return this;
+  }
+
   _dotQuotes(str) {
-    console.log('STR: ', str);
     const exitString = {
       json_build_object: true,
       row_to_json: true
