@@ -1,6 +1,15 @@
 const Query = require('../index.js');
+const { clearRolls } = require('./rolls.js');
 
-module.exports = { find, edit, create, join, leave, saveScore };
+module.exports = {
+  find,
+  edit,
+  create,
+  join,
+  leave,
+  saveScore,
+  updateLastAction
+};
 
 function find(filter, first) {
   return new Query('games AS g')
@@ -10,15 +19,16 @@ function find(filter, first) {
       'g.password AS password',
       'g.isActive AS isActive',
       'g.isJoinable AS isJoinable',
-      // 'array_agg(DISTINCT ug.user_id) AS players'
-      "array_agg(json_build_object('user_id', u.id, 'username', u.username)) as players",
-      "array_agg(json_build_object('user_id', s.user_id, 'Ones', s.Ones, 'Twos', s.Twos, 'Threes', s.Threes, 'Fours', s.Fours, 'Fives', s.Fives, 'Sixes', s.Sixes, 'Left Total', s.Left Total, '3 of a Kind', s.3 of a Kind, '4 of a Kind', s.4 of a Kind, 'Full House', s.Full House, 'Sm Straight', s.Sm Straight, 'Lg Straight', s.Lg Straight, 'Roll!', s.Roll!, 'Roll Bonus', s.Roll! Bonus, 'Free Space', s.Free Space, 'Grand Total', s.Grand Total)) as scores"
+      "CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(DISTINCT r.dice) END AS rolls",
+      'jsonb_object_agg(ps.user_id, ps.*) as scores',
+      'count(DISTINCT ps.user_id) as playerCount'
     )
-    .join('users_in_game AS ug', { 'ug.game_id': 'g.id' }, 'LEFT')
-    .join('scores AS s', { 's.game_id': 'g.id' }, 'LEFT')
-    .join('users AS u', { 'u.id': 'ug.user_id' }, 'LEFT')
+    .join('users_in_game as ug', { 'ug.game_id': 'g.id' })
+    .join('users as u', { 'u.id': 'ug.user_id' })
+    .join('player_scores as ps', { 'ps.game_id': 'g.id' })
+    .join('rolls as r', { 'r.game_id': 'g.id' }, 'LEFT')
     .where(filter)
-    .groupBy('g.id', 'ug.game_id')
+    .groupBy('g.id', 'ps.game_id')
     .first(first)
     .run();
 }
@@ -75,12 +85,18 @@ function leave(game_id, user_id) {
 
 function saveScore(filter, newScore) {
   return new Query('scores')
-    .where(filter)
     .update(newScore)
+    .where(filter)
     .first(true)
     .then(async s => {
-      await Dice.clearRolls(filter);
+      await clearRolls(filter);
       return find({ 'g.id': s.game_id }, true);
     })
     .run();
+}
+
+function updateLastAction(id) {
+  return new Query('games')
+    .where({ id })
+    .update({ last_action: new Date() }, ['*']);
 }
