@@ -33,8 +33,8 @@ module.exports = class Query {
   }
 
   run() {
-    console.log('QUERY: ', this.text);
-    console.log('VALUES: ', this.values);
+    // console.log('QUERY: ', this.text);
+    // console.log('VALUES: ', this.values);
     if (this.returning) {
       this.text += ` RETURNING ${this.returning}`;
     }
@@ -44,7 +44,7 @@ module.exports = class Query {
       .then(res => {
         const data = this.first ? res.rows[0] : res.rows;
         if (!this.callback) {
-          console.log('RETURNING DATA: ', data);
+          // console.log('RETURNING DATA: ', data);
         }
         return this.callback ? this.callback(data) : data;
       })
@@ -58,6 +58,9 @@ module.exports = class Query {
   select(...select) {
     const formattedStr = select
       .map(x => {
+        if (x.substring(0, 4).toLowerCase() === 'case') {
+          return x;
+        }
         const toSplit =
           x.indexOf('AS') > 0 ? ' AS ' : x.indexOf('as') ? ' as ' : ' ';
         const split = x.split(toSplit);
@@ -137,7 +140,12 @@ module.exports = class Query {
   }
 
   groupBy(...arg) {
-    this.text += ` GROUP BY ${arg.join(', ')}`;
+    this.text += ` GROUP BY ${arg.map(str => this._dotQuotes(str)).join(', ')}`;
+    return this;
+  }
+
+  orderBy(...arg) {
+    this.text += ` ORDER BY ${arg.map(str => this._dotQuotes(str)).join(', ')}`;
     return this;
   }
 
@@ -159,13 +167,13 @@ module.exports = class Query {
     if (openParensIndex > -1) {
       const closeParensIndex = str.lastIndexOf(')');
       const aggFunctionName = str.substring(0, openParensIndex).toLowerCase();
-      console.log('AGG FUNCTION: ', aggFunctionName);
+
       if (exitString[aggFunctionName]) {
         return `${str.substring(0, openParensIndex + 1)}${this._buildObject(
           str.substring(openParensIndex + 1, closeParensIndex).split(', ')
         )})`;
       }
-      console.log('FAILED EXIT STRING');
+
       return `${str.substring(0, openParensIndex + 1)}${this._dotQuotes(
         str.substring(openParensIndex + 1, closeParensIndex)
       )}${str.substring(closeParensIndex)}`;
@@ -246,14 +254,13 @@ module.exports = class Query {
     let str = startTerm ? ' ' + startTerm : '';
 
     for (let i = 0; i < keys.length; i++) {
-      const index = this.values.length + 1;
       const key = keys[i];
 
       if (i > 0) {
         str += joinTerm;
       }
 
-      str += ` ${key} = ${data[key]}`;
+      str += ` ${this._dotQuotes(key)} = ${this._dotQuotes(data[key])}`;
     }
     return str;
   }
