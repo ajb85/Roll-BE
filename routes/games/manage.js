@@ -2,7 +2,7 @@ const router = require('express').Router();
 const bcrypt = require('bcrypt');
 
 const Games = require('models/queries/games.js');
-const Dice = require('models/queries/dice.js');
+const Rolls = require('models/queries/rolls.js');
 
 const Sockets = require('sockets/');
 
@@ -13,7 +13,7 @@ router.route('/').get(async (req, res) => {
   const publicGamesList = await Games.find({ password: null });
 
   publicGamesList.forEach(async g => {
-    const dice = await Dice.find({ game_id: g.id, user_id });
+    const dice = await Rolls.find({ game_id: g.id, user_id });
     g.lastRoll = dice && dice.length ? dice[dice.length - 1] : [];
   });
   return res.status(200).json(publicGamesList);

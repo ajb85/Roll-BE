@@ -2,11 +2,12 @@ const router = require('express').Router();
 
 const Users = require('models/queries/users.js');
 const Games = require('models/queries/games.js');
-const Dice = require('models/queries/dice.js');
+const Rolls = require('models/queries/rolls.js');
 
+const { getGameRound } = require('Game/Data/');
+const { verifyUserInGame } = require('middleware/playGames.js');
 const { verifyNewRoll, verifyRound } = require('middleware/playGames.js');
 const { updateScoreTotals, getDieValue } = require('Game/Mechanics/');
-const { verifyUserInGame } = require('middleware/playGames.js');
 
 const Sockets = require('sockets/');
 
@@ -27,11 +28,11 @@ router.post(
     const dice = rolls.length
       ? lastRoll.map((d, i) => (locked[i] ? d : getDieValue()))
       : lastRoll;
-    console.log('SAVING ROLL');
-    const savedRoll = await Dice.saveRoll({ game_id, user_id, dice });
-    await Games.updateLastAction(game_id);
+    const savedRoll = await Rolls.saveRoll({ game_id, user_id, dice });
+    // await Games.updateLastAction(game_id);
     const turnRolls = rolls.map(turn => turn.dice);
     turnRolls.push(savedRoll.dice);
+
     return res
       .status(201)
       .json({ game_id: savedRoll.game_id, rolls: turnRolls });
@@ -53,17 +54,32 @@ router.post(
 
     const updatedScore = updateScoreTotals(category, score, lastRoll);
 
-    const updatedGame = await Games.saveScore(
+    res.locals.game = await Games.saveScore(
       { game_id, user_id },
-      updatedScore
+      { score: JSON.stringify(updatedScore) }
     );
 
-    if (updatedGame.round === 13) {
-      const finished = await Games.deactivate(game_id);
+    const scores = Object.values(res.locals.game.scores).map(
+      ({ score }) => score
+    );
+
+    const round = await getGameRound({ user_id, game_id, scores });
+
+    if (round >= 13) {
+      const finished = await Games.edit(
+        { id: game_id },
+        { isActive: false, isJoinable: false }
+      );
       console.log('FINISHED GAME: ', finished);
 
       const users = await Promise.all(
-        finished.scores.map(s => Users.find({ id: s.user_id }, true))
+        Object.keys(finished.scores)
+          .sort(
+            (a, b) =>
+              finished.scores[b]['Grand Total'] -
+              finished.scores[a]['Grand Total']
+          )
+          .map(id => Users.find({ id }, true))
       );
 
       await users.reduce(
@@ -77,12 +93,9 @@ router.post(
       );
     }
 
-    await Games.updateLastAction(game_id);
+    // await Games.updateLastAction(game_id);
     Sockets.sendTurn({ user_id }, updatedGame);
     return res.status(201).json(updatedGame);
-
-    // Save score
-    // Clear dice rolls
   }
 );
 
