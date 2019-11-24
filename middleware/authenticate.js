@@ -11,6 +11,7 @@ module.exports = (req, res, next) => {
       res.locals.token = decodedToken;
       Users.find({ id: decodedToken.user_id }, true).then(u => {
         if (u) {
+          res.locals.user = u;
           next();
         } else {
           console.error('AUTH ERROR: user not found by ID');
