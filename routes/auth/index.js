@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 
+const auth = require('middleware/authenticate.js');
 const Users = require('models/queries/users.js');
 const generateToken = require('tools/generateToken.js');
 const { verifyAccountInfo } = require('middleware/accounts.js');
@@ -40,6 +41,11 @@ router.post('/', verifyAccountInfo, async (req, res) => {
         .json({ requestType: 'login', message: 'Invalid Credentials' });
     }
   }
+});
+
+router.get('/', auth, (req, res) => {
+  const { user } = res.locals;
+  return res.status(200).json(user);
 });
 
 module.exports = router;
