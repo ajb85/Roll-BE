@@ -1,4 +1,4 @@
-const Query = require('./index.js');
+const Query = require('../index.js');
 
 module.exports = class View extends Query {
   constructor(table) {
@@ -7,10 +7,9 @@ module.exports = class View extends Query {
   }
 
   create(name) {
-    this.text = `CREATE OR REPLACE VIEW ${name} AS` + this.text;
+    this.text = `CREATE OR REPLACE VIEW "${name}" AS` + this.text;
 
     return this;
-    
   }
 
   alter(prevName, newName) {
