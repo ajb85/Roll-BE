@@ -1,5 +1,5 @@
 const Games = require('models/queries/games.js');
-const Dice = require('models/queries/dice.js');
+const Rolls = require('models/queries/rolls.js');
 const Scores = require('models/queries/scores.js');
 
 const { isUsersTurn, isPlayableCategory } = require('Game/Data/');
@@ -9,9 +9,7 @@ module.exports = { verifyNewRoll, verifyRound, verifyUserInGame };
 async function verifyUserInGame(req, res, next) {
   const { user_id } = res.locals.token;
   const { game_id } = req.params;
-  console.log('FINDING GAME');
   const game = await Games.find({ 'g.id': game_id }, true);
-  console.log('GAME FOUND');
   if (!game) {
     return res.status(404).json({ message: 'Game not found' });
   }
@@ -28,15 +26,13 @@ async function verifyUserInGame(req, res, next) {
       message: 'You are not in this game.'
     });
   }
-  console.log('CALCULATING USER TURN');
   const isTurn = await isUsersTurn({ game_id, user_id });
-  console.log('isTurn: ', isTurn);
   if (game_id && !isTurn) {
     return res
       .status(400)
       .json({ requestType: 'play', message: 'It is not your turn yet.' });
   }
-
+  res.locals.game = game;
   next();
 }
 
@@ -44,7 +40,7 @@ async function verifyNewRoll(req, res, next) {
   const { game_id } = req.params;
   const { user_id } = res.locals.token;
 
-  const rolls = await Dice.find({ game_id, user_id });
+  const rolls = await Rolls.find({ game_id, user_id });
 
   if (rolls && rolls.length >= 3) {
     // User out of turns
@@ -72,7 +68,7 @@ async function verifyRound(req, res, next) {
   const { game_id } = req.params;
   const { category } = req.body;
 
-  const score = await Scores.find({ game_id, user_id }, true);
+  const { score } = await Scores.find({ game_id, user_id }, true);
   if (score[category] !== null) {
     return res.status(400).json({
       requestType: 'play',
@@ -86,7 +82,7 @@ async function verifyRound(req, res, next) {
       .json({ requestType: 'play', message: 'That is not a valid category.' });
   }
 
-  const rolls = await Dice.find({ game_id, user_id });
+  const rolls = await Rolls.find({ game_id, user_id });
 
   if (!rolls || !rolls.length) {
     return res
@@ -102,5 +98,5 @@ async function verifyRound(req, res, next) {
 
 async function _isPlayerInGame(game_id, user_id) {
   const game = await Games.find({ 'g.id': game_id }, true);
-  return !!game.players.find(id => parseInt(id, 10) === parseInt(user_id, 10));
+  return !!game.scores[user_id];
 }

@@ -55,7 +55,7 @@ async function verifyJoin(req, res, next) {
       .json({ requestType: 'game', message: 'Invalid password.' });
   }
 
-  if (game.players.find(p => parseInt(p, 10) === parseInt(user_id, 10))) {
+  if (game.scores[user_id]) {
     return res
       .status(400)
       .json({ requestType: 'game', message: "You're already in that game!" });
