@@ -1,13 +1,13 @@
 const router = require('express').Router();
 
-const Users = require('models/queries/users.js');
 const Games = require('models/queries/games.js');
 const Rolls = require('models/queries/rolls.js');
 
-const { getGameRound } = require('Game/Data/');
 const { verifyUserInGame } = require('middleware/playGames.js');
 const { verifyNewRoll, verifyRound } = require('middleware/playGames.js');
-const { updateScoreTotals, getDieValue } = require('Game/Mechanics/');
+
+const { getGameRound } = require('Game/Data/');
+const { updateScoreTotals, getDieValue, endGame } = require('Game/Mechanics/');
 
 const Sockets = require('sockets/');
 
@@ -61,34 +61,13 @@ router.post(
 
     const { scores } = res.locals.game;
 
-    const round = await getGameRound({ user_id, game_id, scores });
+    const round = await getGameRound({
+      game_id,
+      scores: Object.keys(scores).map(userID => scores[userID])
+    });
 
     if (round >= 13) {
-      const finished = await Games.edit(
-        { id: game_id },
-        { isActive: false, isJoinable: false }
-      );
-      console.log('FINISHED GAME: ', finished);
-
-      const users = await Promise.all(
-        Object.keys(finished.scores)
-          .sort(
-            (a, b) =>
-              finished.scores[b]['Grand Total'] -
-              finished.scores[a]['Grand Total']
-          )
-          .map(id => Users.find({ id }, true))
-      );
-
-      await users.reduce(
-        (acc, u, i) =>
-          acc.then(_ => {
-            const update =
-              i === 0 ? { wins: u.wins + 1 } : { losses: u.losses + 1 };
-            Users.edit({ id: u.id }, update);
-          }),
-        Promise.resolve()
-      );
+      await endGame(game_id);
     }
 
     // await Games.updateLastAction(game_id);
