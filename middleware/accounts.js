@@ -1,5 +1,5 @@
 const { isValidEmail, isValidUsername } = require('tools/inputEvaluation.js');
-const Users = require('../models/db/users');
+const Users = require('../models/queries/users.js');
 
 module.exports = { parseInput, verifyAccountInfo };
 
@@ -34,8 +34,8 @@ async function verifyAccountInfo(req, res, next) {
       });
     }
 
-    const usernameExists = await Users.find({ username }).first();
-    const emailExists = await Users.find({ email }).first();
+    const usernameExists = await Users.find({ username }, true);
+    const emailExists = await Users.find({ email }, true);
 
     if (usernameExists) {
       return res

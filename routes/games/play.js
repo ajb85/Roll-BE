@@ -1,12 +1,13 @@
 const router = require('express').Router();
 
-const Users = require('models/db/users.js');
-const Games = require('models/db/games.js');
-const Dice = require('models/db/dice.js');
+const Users = require('models/queries/users.js');
+const Games = require('models/queries/games.js');
+const Rolls = require('models/queries/rolls.js');
 
+const { getGameRound } = require('Game/Data/');
+const { verifyUserInGame } = require('middleware/playGames.js');
 const { verifyNewRoll, verifyRound } = require('middleware/playGames.js');
 const { updateScoreTotals, getDieValue } = require('Game/Mechanics/');
-const { verifyUserInGame } = require('middleware/playGames.js');
 
 const Sockets = require('sockets/');
 
@@ -24,14 +25,14 @@ router.post(
       ? rolls[rolls.length - 1].dice
       : getDieValue(5);
 
-    const newRoll = rolls.length
+    const dice = rolls.length
       ? lastRoll.map((d, i) => (locked[i] ? d : getDieValue()))
       : lastRoll;
-
-    const savedRoll = await Dice.saveRoll(game_id, user_id, newRoll);
-    await Games.updateLastAction(game_id);
+    const savedRoll = await Rolls.saveRoll({ game_id, user_id, dice });
+    // await Games.updateLastAction(game_id);
     const turnRolls = rolls.map(turn => turn.dice);
     turnRolls.push(savedRoll.dice);
+
     return res
       .status(201)
       .json({ game_id: savedRoll.game_id, rolls: turnRolls });
@@ -53,48 +54,46 @@ router.post(
 
     const updatedScore = updateScoreTotals(category, score, lastRoll);
 
-    const updatedGame = await Games.saveScore(
+    res.locals.game = await Games.saveScore(
       { game_id, user_id },
-      updatedScore
+      { score: JSON.stringify(updatedScore) }
     );
 
-    if (updatedGame.round === 13) {
-      const finished = await Games.deactivate(game_id);
+    const { scores } = res.locals.game;
+
+    const round = await getGameRound({ user_id, game_id, scores });
+
+    if (round >= 13) {
+      const finished = await Games.edit(
+        { id: game_id },
+        { isActive: false, isJoinable: false }
+      );
       console.log('FINISHED GAME: ', finished);
-      const { wins } = await Users.retrieve({
-        id: finished.scores.leader.user_id
-      });
 
-      await Users.edit(
-        { id: finished.scores.leader.user_id },
-        { wins: wins + 1 }
+      const users = await Promise.all(
+        Object.keys(finished.scores)
+          .sort(
+            (a, b) =>
+              finished.scores[b]['Grand Total'] -
+              finished.scores[a]['Grand Total']
+          )
+          .map(id => Users.find({ id }, true))
       );
 
-      const { losses } = await Users.retrieve({
-        id: finished.scores.user.user_id
-      });
-
-      await Users.edit(
-        { id: finished.scores.user.user_id },
-        { losses: losses + 1 }
-      );
-
-      finished.scores.others.reduce(
-        (acc, { user_id: id }) =>
-          acc.then(async _ => {
-            const { losses } = await Users.retrieve({ id });
-            return await Users.edit({ id }, { losses: losses + 1 });
+      await users.reduce(
+        (acc, u, i) =>
+          acc.then(_ => {
+            const update =
+              i === 0 ? { wins: u.wins + 1 } : { losses: u.losses + 1 };
+            Users.edit({ id: u.id }, update);
           }),
         Promise.resolve()
       );
     }
 
-    await Games.updateLastAction(game_id);
-    Sockets.sendTurn({ user_id }, updatedGame);
-    return res.status(201).json(updatedGame);
-
-    // Save score
-    // Clear dice rolls
+    // await Games.updateLastAction(game_id);
+    Sockets.sendTurn({ user_id }, res.locals.game);
+    return res.status(201).json(res.locals.game);
   }
 );
 

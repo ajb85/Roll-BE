@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const bcrypt = require('bcrypt');
 
-const Games = require('models/db/games.js');
-const Dice = require('models/db/dice.js');
+const Games = require('models/queries/games.js');
+const Rolls = require('models/queries/rolls.js');
 
 const Sockets = require('sockets/');
 
@@ -13,7 +13,7 @@ router.route('/').get(async (req, res) => {
   const publicGamesList = await Games.find({ password: null });
 
   publicGamesList.forEach(async g => {
-    const dice = await Dice.find({ game_id: g.id, user_id });
+    const dice = await Rolls.find({ game_id: g.id, user_id });
     g.lastRoll = dice && dice.length ? dice[dice.length - 1] : [];
   });
   return res.status(200).json(publicGamesList);
@@ -21,8 +21,9 @@ router.route('/').get(async (req, res) => {
 
 router.get('/user', async (req, res) => {
   const { user_id } = res.locals.token;
-  const userGames = await Games.byUserID(user_id);
-  console.log('FOUND USER GAMES: ', userGames);
+  const userGames = await Games.find({ 'u.id': user_id, 'g.isActive': true });
+  console.log('GETTING GAMES');
+
   const gamesList = userGames.map(({ name }) => name);
 
   Sockets.listenToGamesList({ user_id }, gamesList);
@@ -44,24 +45,25 @@ router.post('/user/create', verifyNewGame, async (req, res) => {
 
 router.post('/user/join', verifyJoin, async (req, res) => {
   const { user_id } = res.locals.token;
-  const { game } = res.locals;
+  const {
+    game: { game_id }
+  } = res.locals;
 
-  const joined = await Games.join(game.game_id, user_id);
+  const game = await Games.join(game_id, user_id);
+  delete game.rolls;
+  Sockets.join({ user_id }, game.name, game);
 
-  Sockets.join({ user_id }, joined.name);
-
-  return res.status(201).json(joined);
+  return res.status(201).json(game);
 });
 
 router.post('/user/leave', async (req, res) => {
   const { user_id } = res.locals.token;
   const { game_id } = req.body;
   const game = await Games.leave(game_id, user_id);
+  delete game.rolls;
 
-  if (!game.players.length || game.players[0] === null) {
-    await Games.deactivate(game_id);
-    Sockets.leave({ user_id }, game.name);
-  }
+  Sockets.leave({ user_id }, game.name, game);
+
   return res.sendStatus(201);
 });
 

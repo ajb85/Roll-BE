@@ -1,23 +1,23 @@
 exports.up = function(knex) {
-  const categories = [
-    'Ones',
-    'Twos',
-    'Threes',
-    'Fours',
-    'Fives',
-    'Sixes',
-    'Left Bonus',
-    'Left Total',
-    '3 of a Kind',
-    '4 of a Kind',
-    'Full House',
-    'Sm Straight',
-    'Lg Straight',
-    'Roll!',
-    'Roll! Bonus',
-    'Free Space',
-    'Grand Total'
-  ];
+  const startingScore = JSON.stringify({
+    Ones: null,
+    Twos: null,
+    Threes: null,
+    Fours: null,
+    Fives: null,
+    Sixes: null,
+    'Left Bonus': null,
+    'Left Total': null,
+    '3 of a Kind': null,
+    '4 of a Kind': null,
+    'Full House': null,
+    'Sm Straight': null,
+    'Lg Straight': null,
+    'Roll!': null,
+    'Roll! Bonus': null,
+    'Free Space': null,
+    'Grand Total': null
+  });
   return knex.schema
     .createTable('scores', tbl => {
       tbl.increments();
@@ -35,9 +35,12 @@ exports.up = function(knex) {
         .onDelete('CASCADE')
         .onUpdate('CASCADE')
         .notNullable();
-      categories.forEach(cat => tbl.integer(cat));
+      tbl
+        .jsonb('score')
+        .notNullable()
+        .defaultsTo(startingScore);
     })
-    .createTable('dice', tbl => {
+    .createTable('rolls', tbl => {
       tbl.increments();
       tbl
         .integer('game_id')
@@ -58,5 +61,5 @@ exports.up = function(knex) {
 };
 
 exports.down = function(knex) {
-  return knex.schema.dropTable('dice').dropTable('scores');
+  return knex.schema.dropTable('rolls').dropTable('scores');
 };

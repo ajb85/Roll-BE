@@ -4,8 +4,8 @@ const server = require('./server');
 const errorHandler = require('middleware/errorHandling.js');
 const auth = require('middleware/authenticate.js');
 
-// Outerware - yes, I made this up
-const removePassword = require('outerware/removePassword.js');
+// Afterware - yes, I made this up
+const removePassword = require('afterware/removePassword.js');
 
 // Routes
 const authRouter = require('routes/auth');

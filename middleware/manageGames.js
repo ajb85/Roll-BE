@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const Games = require('../models/db/games.js');
+const Games = require('../models/queries/games.js');
 
 module.exports = { verifyNewGame, verifyJoin };
 
@@ -12,10 +12,13 @@ async function verifyNewGame(req, res, next) {
       .status(400)
       .json({ requestType: 'game', message: 'New games must have a name' });
   }
-  const existingGame = await Games.simpleFind({
-    name: req.body.name.toString(),
-    isActive: true
-  }).first();
+  const existingGame = await Games.find(
+    {
+      name: req.body.name.toString(),
+      isActive: true
+    },
+    true
+  );
 
   if (existingGame) {
     console.log('New game, but name already exists');
@@ -32,7 +35,7 @@ async function verifyJoin(req, res, next) {
   const { user_id } = res.locals.token;
   const { name, password } = req.body;
 
-  const game = await Games.find({ 'g.name': name }).first();
+  const game = await Games.find({ 'g.name': name, 'g.isActive': true }, true);
 
   if (!game) {
     return res
@@ -52,7 +55,7 @@ async function verifyJoin(req, res, next) {
       .json({ requestType: 'game', message: 'Invalid password.' });
   }
 
-  if (game.players.find(p => parseInt(p, 10) === parseInt(user_id, 10))) {
+  if (game.scores[user_id]) {
     return res
       .status(400)
       .json({ requestType: 'game', message: "You're already in that game!" });
