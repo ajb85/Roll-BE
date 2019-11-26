@@ -1,4 +1,7 @@
-module.exports = { updateScoreTotals, getDieValue };
+const Users = require('models/queries/users.js');
+const Games = require('models/queries/games.js');
+
+module.exports = { updateScoreTotals, getDieValue, endGame };
 
 function updateScoreTotals(category, userScore, dice) {
   const score = { ...userScore };
@@ -47,7 +50,48 @@ function getCategoryScore(category, dice) {
     'Free Space': () => freeSpace(dice)
   }[category]();
 }
-//
+
+async function endGame(game_id) {
+  const finished = await Games.edit(
+    { id: game_id },
+    { isActive: false, isJoinable: false }
+  );
+  console.log('FINISHED GAME: ', game_id);
+  const userIDs = Object.keys(finished.scores);
+
+  const users = await Promise.all(userIDs.map(id => Users.find({ id }, true)));
+  const winnerIDs = userIDs.reduce((w, userID) => {
+    if (!w[0]) {
+      w.push(userID);
+      return w;
+    }
+    const score = finished.scores[userID].score['Grand Total'];
+    const top = finished.scores[w[0]].score['Grand Total'];
+    if (score > top) {
+      return [userID];
+    } else if (score === top) {
+      w.push(userID);
+      return w;
+    } else {
+      return w;
+    }
+  }, []);
+
+  const winners = winnerIDs.reduce((acc, cur) => {
+    acc[cur] = true;
+    return acc;
+  }, {});
+
+  await Promise.all(
+    users.map(u => {
+      const update = winners[u.id]
+        ? { wins: u.wins + 1 }
+        : { losses: u.losses + 1 };
+      return Users.edit({ id: u.id }, update);
+    })
+  );
+}
+
 function getDieValue(num) {
   if (!num) {
     return (Math.round(Math.random() * 1200) % 6) + 1;
