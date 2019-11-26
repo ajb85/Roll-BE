@@ -58,7 +58,7 @@ async function verifyNewRoll(req, res, next) {
 }
 
 async function verifyRound(req, res, next) {
-  if (!req.body) {
+  if (!req.body.category) {
     // No category submitted
     return res
       .status(400)
@@ -68,8 +68,8 @@ async function verifyRound(req, res, next) {
   const { user_id } = res.locals.token;
   const { game_id } = req.params;
   const { category } = req.body;
-
   const { score } = await Scores.find({ game_id, user_id }, true);
+
   if (score[category] !== null) {
     return res.status(400).json({
       requestType: 'play',
