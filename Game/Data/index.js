@@ -8,13 +8,12 @@ async function getGameRound({ game_id, user_id, scores }) {
   }
 
   if (!scores) {
-    const scoreRows = await Scores.find({ game_id });
-    scores = scoreRows.map(({ score }) => score);
+    scores = await Scores.find({ game_id });
   }
-
   let userRound, lowCount;
-  scores.forEach(userScore => {
+  scores.forEach(s => {
     let count = 0;
+    const { score: userScore } = s;
 
     for (let category in userScore) {
       if (userScore[category] !== null && isPlayableCategory(category)) {
@@ -22,20 +21,21 @@ async function getGameRound({ game_id, user_id, scores }) {
       }
     }
 
-    if (user_id && userScore.user_id === user_id) {
+    if (user_id && s.user_id === user_id) {
       userRound = count;
     }
 
     lowCount = lowCount === undefined || count < lowCount ? count : lowCount;
   });
+
   lowCount = lowCount || 0;
   userRound = userRound || 0;
 
   return user_id ? userRound <= lowCount : lowCount;
 }
 
-async function isUsersTurn(gameData) {
-  return await getGameRound(gameData);
+function isUsersTurn(gameData) {
+  return getGameRound(gameData);
 }
 
 function isPlayableCategory(category) {
