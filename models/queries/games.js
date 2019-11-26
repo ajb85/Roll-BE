@@ -76,7 +76,7 @@ function leave(game_id, user_id) {
         .where({ game_id })
         .run();
 
-      return users && users.length
+      return users && (users.length || users.game_id)
         ? find({ 'g.id': game_id }, true)
         : edit({ id: game_id }, { isActive: false, isJoinable: false });
     })
