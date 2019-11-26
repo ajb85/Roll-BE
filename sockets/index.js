@@ -8,10 +8,6 @@ class SocketsManager {
     this.connected = {};
     this.userToSocket = {};
 
-    this.startListeners();
-  }
-
-  startListeners() {
     this.io.on('connection', socket => {
       console.log('Client Connected');
       const listeners = reqDir('./listeners/');
@@ -22,24 +18,24 @@ class SocketsManager {
     });
   }
 
-  join(userData, room) {
+  join(userData, room, updatedGame) {
     const socket_id = this._getSocketIDFromUserData(userData);
     const socket = this.connected[socket_id];
-
     socket.join(room);
-    this.emitToRoom(socket_id, room, 'userJoined', socket.user.username);
+    this.emitToRoom(socket_id, room, 'userList', updatedGame);
   }
 
-  leave(userData, room) {
+  leave(userData, room, updatedGame) {
     const socket_id = this._getSocketIDFromUserData(userData);
     const socket = this.connected[socket_id];
 
     socket.leave(room);
-    this.emitToRoom(socket.id, room, 'userLeft', socket.user.username);
+    this.emitToRoom(socket.id, room, 'userList', updatedGame);
   }
 
   emitToRoom(socket_id, room, context, message) {
-    this.connected[socket_id].to(room).emit(context, message);
+    console.log(`EMITTING TO ${room}[${context}]: `);
+    this.connected[socket_id].to(room).emit(room, context, message);
   }
 
   sendTurn(userData, turnData) {
