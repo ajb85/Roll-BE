@@ -59,9 +59,7 @@ router.post(
       { score: JSON.stringify(updatedScore) }
     );
 
-    const scores = Object.values(res.locals.game.scores).map(
-      ({ score }) => score
-    );
+    const { scores } = res.locals.game;
 
     const round = await getGameRound({ user_id, game_id, scores });
 
@@ -94,8 +92,8 @@ router.post(
     }
 
     // await Games.updateLastAction(game_id);
-    Sockets.sendTurn({ user_id }, updatedGame);
-    return res.status(201).json(updatedGame);
+    Sockets.sendTurn({ user_id }, res.locals.game);
+    return res.status(201).json(res.locals.game);
   }
 );
 

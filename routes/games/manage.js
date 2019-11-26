@@ -45,23 +45,25 @@ router.post('/user/create', verifyNewGame, async (req, res) => {
 
 router.post('/user/join', verifyJoin, async (req, res) => {
   const { user_id } = res.locals.token;
-  const { game } = res.locals;
+  const {
+    game: { game_id }
+  } = res.locals;
 
-  const joined = await Games.join(game.game_id, user_id);
-  Sockets.join({ user_id }, joined.name);
+  const game = await Games.join(game_id, user_id);
+  delete game.rolls;
+  Sockets.join({ user_id }, game.name, game);
 
-  return res.status(201).json(joined);
+  return res.status(201).json(game);
 });
 
 router.post('/user/leave', async (req, res) => {
   const { user_id } = res.locals.token;
   const { game_id } = req.body;
   const game = await Games.leave(game_id, user_id);
+  delete game.rolls;
 
-  if (!game.players.length || game.players[0] === null) {
-    await Games.deactivate(game_id);
-    Sockets.leave({ user_id }, game.name);
-  }
+  Sockets.leave({ user_id }, game.name, game);
+
   return res.sendStatus(201);
 });
 
