@@ -27,6 +27,7 @@ async function verifyUserInGame(req, res, next) {
     });
   }
   const isTurn = await isUsersTurn({ game_id, user_id });
+
   if (game_id && !isTurn) {
     return res
       .status(400)
