@@ -2,17 +2,8 @@ const jwt = require('jsonwebtoken');
 const secret = require('config/secret.js');
 const Users = require('models/queries/users.js');
 
-// class Socket {
-//   constructor(socket) {
-//     for (let key in socket) {
-//       this[key] = socket[key];
-//     }
-//     this.user;
-//     Object.setPrototypeOf(this, socket.prototype);
-//   }
-// }
-
 module.exports = function(socket, token) {
+  console.log('ID? ');
   if (!this.connected[socket.id] && token) {
     jwt.verify(token, secret, (err, decodedToken) => {
       if (!err) {

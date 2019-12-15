@@ -17,7 +17,6 @@ server.use('/api/auth', authRouter);
 server.use('/api/games', auth, gamesRouter);
 
 server.get('/', (req, res) => {
-  console.log(res);
   res.send("It's working!");
 });
 

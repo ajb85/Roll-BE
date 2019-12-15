@@ -1,6 +1,7 @@
 const http = require('config/http.js');
 const io = require('socket.io')(http);
 const reqDir = require('require-dir');
+const listeners = reqDir('./listeners/');
 
 class SocketsManager {
   constructor() {
@@ -8,11 +9,13 @@ class SocketsManager {
     this.connected = {};
     this.userToSocket = {};
 
+    console.log('SOCKETS ONLINE');
+
     this.io.on('connection', socket => {
       console.log('Client Connected');
-      const listeners = reqDir('./listeners/');
 
       for (let l in listeners) {
+        console.log('Listening: ', l, typeof listeners[l]);
         socket.on(l, listeners[l].bind(this, socket));
       }
     });

@@ -37,7 +37,6 @@ router.post('/user/create', verifyNewGame, async (req, res) => {
     req.body.password = bcrypt.hashSync(req.body.password, 10);
   }
   const newGame = await Games.create(req.body, user_id);
-
   Sockets.join({ user_id }, newGame.name);
 
   return res.status(201).json(newGame);
