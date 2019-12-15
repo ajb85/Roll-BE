@@ -3,8 +3,7 @@ const secret = require('config/secret.js');
 const Users = require('models/queries/users.js');
 
 module.exports = function(socket, token) {
-  console.log('ID? ');
-  if (!this.connected[socket.id] && token) {
+  if (this.connected[socket.id].user.username === 'New Socket' && token) {
     jwt.verify(token, secret, (err, decodedToken) => {
       if (!err) {
         const { user_id } = decodedToken;
@@ -15,7 +14,7 @@ module.exports = function(socket, token) {
             console.log(
               'IDENTIFIED SOCKET: ',
               this.connected[socket.id].user.username,
-              'CONNECTED: ',
+              'USER COUNT: ',
               Object.keys(this.connected).length
             );
           }
