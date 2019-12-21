@@ -1,6 +1,7 @@
 const http = require('config/http.js');
 const io = require('socket.io')(http);
 const reqDir = require('require-dir');
+const listeners = reqDir('./listeners/');
 
 class SocketsManager {
   constructor() {
@@ -8,29 +9,54 @@ class SocketsManager {
     this.connected = {};
     this.userToSocket = {};
 
-    this.io.on('connection', socket => {
-      console.log('Client Connected');
-      const listeners = reqDir('./listeners/');
+    console.log('\nSOCKETS ONLINE');
 
+    this.io.on('connection', socket => {
+      socket.user = { username: 'New Socket' };
+      this.connected[socket.id] = socket;
+      console.log('Client Connected');
+      // socket.emit('connect', 'You are now online');
       for (let l in listeners) {
         socket.on(l, listeners[l].bind(this, socket));
       }
+
+      socket.frontendSubscriptions = {
+        error: true,
+        subscribe: true,
+        disconnect: true,
+        connect: true
+      };
     });
   }
 
-  join(userData, room, updatedGame) {
-    const socket_id = this._getSocketIDFromUserData(userData);
-    const socket = this.connected[socket_id];
-    socket.join(room);
-    this.emitToRoom(socket_id, room, 'userList', updatedGame);
+  join(userData, room, config) {
+    const socket = this._getSocketFromUserData(userData);
+    const alreadyJoined = socket.frontendSubscriptions[room];
+    if (!alreadyJoined) {
+      socket.join(room);
+      socket.frontendSubscriptions[room] = true;
+    }
+
+    if (config) {
+      // If the user joining this room should be emitted to the other users
+      // in that room (ie: "Username has joined the chat"), supply a config
+      // object, including the context and message that should be sent to the FE
+      this.emitToRoom(socket.id, room, config.context, config.message);
+    }
+
+    return !alreadyJoined;
   }
 
-  leave(userData, room, updatedGame) {
-    const socket_id = this._getSocketIDFromUserData(userData);
-    const socket = this.connected[socket_id];
+  leave(userData, room, config) {
+    const socket = this._getSocketFromUserData(userData);
 
+    console.log(`${socket.user.username} is leaving ${room}`);
     socket.leave(room);
-    this.emitToRoom(socket.id, room, 'userList', updatedGame);
+
+    if (config) {
+      console.log('CONFIG: ', config);
+      this.emitToRoom(socket.id, room, config.context, config.message);
+    }
   }
 
   emitToRoom(socket_id, room, context, message) {
@@ -61,6 +87,12 @@ class SocketsManager {
 
   _getSocketIDFromUserData({ user_id, socket_id }) {
     return user_id ? this.getSocketIDByUserID(user_id) : socket_id;
+  }
+
+  _getSocketFromUserData({ user_id, socket_id }) {
+    return user_id
+      ? this.connected[this.getSocketIDByUserID(user_id)]
+      : this.connected[socket_id];
   }
 }
 

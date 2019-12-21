@@ -38,7 +38,6 @@ router.post('/user/create', verifyNewGame, async (req, res) => {
     req.body.password = bcrypt.hashSync(req.body.password, 10);
   }
   const newGame = await Games.create(req.body, user_id);
-
   Sockets.join({ user_id }, newGame.name);
 
   return res.status(201).json(newGame);
@@ -52,18 +51,18 @@ router.post('/user/join', verifyJoin, async (req, res) => {
 
   const game = await Games.join(game_id, user_id);
   delete game.rolls;
-  Sockets.join({ user_id }, game.name, game);
+  Sockets.join({ user_id }, game.name, { context: 'userList', message: game });
 
   return res.status(201).json(game);
 });
 
-router.post('/user/leave', async (req, res) => {
+router.delete('/user/leave/:game_id', async (req, res) => {
   const { user_id } = res.locals.token;
-  const { game_id } = req.body;
+  const { game_id } = req.params;
   const game = await Games.leave(game_id, user_id);
-  delete game.rolls;
 
-  Sockets.leave({ user_id }, game.name, game);
+  const config = game.isActive ? { context: 'userList', message: game } : null;
+  Sockets.leave({ user_id }, game.name, config);
 
   return res.sendStatus(201);
 });

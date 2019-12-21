@@ -38,7 +38,7 @@ function edit(filter, newInfo) {
     .update(newInfo)
     .where(filter)
     .first(true)
-    .then(g => find({ 'g.id': g.id }, true))
+    .then(g => (g.isActive ? find({ 'g.id': g.id }, true) : g))
     .run();
 }
 
@@ -57,7 +57,7 @@ function create(newGame, user_id) {
 
 function join(game_id, user_id) {
   return new Query('users_in_game')
-    .insert({ game_id, user_id })
+    .insert({ game_id, user_id }, ['*'])
     .first(true)
     .then(async _ => {
       await new Query('scores').insert({ game_id, user_id }).run();

@@ -4,7 +4,7 @@ const environment = process.env.NODE_ENV || 'development';
 const connection =
   environment === 'production'
     ? {
-        connectionString: process.env.HEROKU_POSTGRESQL_IVORY_URL
+        connectionString: process.env.DATABASE_URL
       }
     : environment === 'development'
     ? {
