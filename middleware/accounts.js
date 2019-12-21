@@ -5,6 +5,7 @@ module.exports = { parseInput, verifyAccountInfo };
 
 function parseInput(req, res, next) {
   res.locals.user = {};
+  console.log('BODY: ', req.body);
   res.locals.user.username = req.body.username
     ? req.body.username.toLowerCase()
     : null;
@@ -48,6 +49,7 @@ async function verifyAccountInfo(req, res, next) {
         .json({ requestType: 'register', message: 'Email already in use' });
     }
   }
+  console.log(res.locals);
   password && ((username && email) || account)
     ? next()
     : res.status(400).json({

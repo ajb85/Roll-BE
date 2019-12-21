@@ -9,14 +9,15 @@ const Sockets = require('sockets/');
 const { verifyNewGame, verifyJoin } = require('middleware/manageGames.js');
 
 router.route('/').get(async (req, res) => {
-  const { user_id } = res.locals.token;
-  const publicGamesList = await Games.find({ password: null });
+  const { user_id } = req.locals.token;
+  const publicGamesList = await Games.find({ 'g.password': null });
 
-  publicGamesList.forEach(async g => {
-    const dice = await Rolls.find({ game_id: g.id, user_id });
-    g.lastRoll = dice && dice.length ? dice[dice.length - 1] : [];
-  });
-  return res.status(200).json(publicGamesList);
+  publicGamesList &&
+    publicGamesList.forEach(async g => {
+      const dice = await Rolls.find({ game_id: g.id, user_id });
+      g.lastRoll = dice && dice.length ? dice[dice.length - 1] : [];
+    });
+  return res.status(200).json(publicGamesList || []);
 });
 
 router.get('/user', async (req, res) => {
