@@ -57,7 +57,7 @@ function create(newGame, user_id) {
 
 function join(game_id, user_id) {
   return new Query('users_in_game')
-    .insert({ game_id, user_id })
+    .insert({ game_id, user_id }, ['*'])
     .first(true)
     .then(async _ => {
       await new Query('scores').insert({ game_id, user_id }).run();
