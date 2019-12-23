@@ -69,7 +69,7 @@ router.post(
     if (round >= 13) {
       await endGame(game_id);
     }
-
+    delete res.locals.game.rolls;
     // await Games.updateLastAction(game_id);
     Sockets.sendTurn({ user_id }, res.locals.game);
     return res.status(201).json(res.locals.game);
