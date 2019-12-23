@@ -56,7 +56,7 @@ async function endGame(game_id) {
     { id: game_id },
     { isActive: false, isJoinable: false }
   );
-  console.log('FINISHED GAME: ', game_id);
+  console.log('FINISHED GAME: ', finished);
   const userIDs = Object.keys(finished.scores);
 
   const users = await Promise.all(userIDs.map(id => Users.find({ id }, true)));
