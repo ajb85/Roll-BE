@@ -66,21 +66,21 @@ function join(game_id, user_id) {
     .run();
 }
 
-function leave(game_id, user_id) {
-  return new Query('users_in_game')
-    .delete({ game_id, user_id })
-    .then(async _ => {
-      await new Query('scores').delete({ game_id, user_id }).run();
-      const users = await new Query('users_in_game')
-        .select('*')
-        .where({ game_id })
-        .run();
-
-      return users && (users.length || users.game_id)
-        ? find({ 'g.id': game_id }, true)
-        : edit({ id: game_id }, { isActive: false, isJoinable: false });
-    })
+async function leave(game_id, user_id) {
+  const game = await find({ 'g.id': game_id }, true);
+  await new Query('users_in_game').delete({ game_id, user_id }).run();
+  const users = await new Query('users_in_game')
+    .select('*')
+    .where({ game_id })
     .run();
+
+  if (users && (users.length || users.game_id)) {
+    game.isActive = false;
+    game.isJoinable = false;
+    delete game.scores[user_id];
+    edit({ id: game_id }, { isActive: false, isJoinable: false });
+  }
+  return game;
 }
 
 function saveScore(filter, newScore) {
