@@ -5,7 +5,6 @@ module.exports = { parseInput, verifyAccountInfo };
 
 function parseInput(req, res, next) {
   res.locals.user = {};
-  console.log('BODY: ', req.body);
   res.locals.user.username = req.body.username
     ? req.body.username.toLowerCase()
     : null;
