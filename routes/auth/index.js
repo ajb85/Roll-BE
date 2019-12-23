@@ -43,8 +43,9 @@ router.post('/', verifyAccountInfo, async (req, res) => {
   }
 });
 
-router.put('/update', async (req, res) => {
-  const { user_id: id } = res.locals.token;
+router.put('/update/:id', async (req, res) => {
+  // const { user_id: id } = res.locals.token;
+  const { id } = req.params;
   if (req.body.password) {
     const password = bcrypt.hashSync(req.body.password, 10);
 
