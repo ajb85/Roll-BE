@@ -38,7 +38,7 @@ function edit(filter, newInfo) {
     .update(newInfo)
     .where(filter)
     .first(true)
-    .then(g => (g.isActive ? find({ 'g.id': g.id }, true) : g))
+    .then(g => find({ 'g.id': g.id }, true))
     .run();
 }
 
