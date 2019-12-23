@@ -22,7 +22,7 @@ router.route('/').get(async (req, res) => {
 
 router.get('/user', async (req, res) => {
   const { user_id } = res.locals.token;
-  const userGames = await Games.find({ 'u.id': user_id, 'g.isActive': true });
+  const userGames = await Games.find({ 'u.id': user_id });
   console.log('GETTING GAMES');
 
   const gamesList = userGames.map(({ name }) => name);
