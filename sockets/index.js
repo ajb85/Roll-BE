@@ -54,7 +54,6 @@ class SocketsManager {
     socket.leave(room);
 
     if (config) {
-      console.log('CONFIG: ', config);
       this.emitToRoom(socket.id, room, config.context, config.message);
     }
   }
