@@ -43,6 +43,23 @@ router.post('/', verifyAccountInfo, async (req, res) => {
   }
 });
 
+router.put('/update', auth, async (req, res) => {
+  const { user_id: id } = res.locals.token;
+  if (req.body.password) {
+    const password = bcrypt.hashSync(req.body.password, 10);
+
+    const updated = await Users.edit({ id }, { password });
+
+    return updated
+      ? res.status(200).json({ message: 'Account updated!' })
+      : res
+          .status(400)
+          .json({ message: 'Something went wrong updating the account' });
+  } else {
+    return res.status(400).json({ message: 'No password' });
+  }
+});
+
 router.get('/', auth, (req, res) => {
   const { user } = res.locals;
   return res.status(200).json(user);
