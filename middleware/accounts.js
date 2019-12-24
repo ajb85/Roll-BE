@@ -48,7 +48,6 @@ async function verifyAccountInfo(req, res, next) {
         .json({ requestType: 'register', message: 'Email already in use' });
     }
   }
-  console.log(res.locals);
   password && ((username && email) || account)
     ? next()
     : res.status(400).json({
