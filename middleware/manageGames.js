@@ -1,7 +1,40 @@
 const bcrypt = require('bcrypt');
 const Games = require('../models/queries/games.js');
 
-module.exports = { verifyNewGame, verifyJoin };
+module.exports = { verifyOwner, verifyNewLink, verifyNewGame, verifyJoin };
+
+async function verifyOwner(req, res, next) {
+  const { game_id } = req.params;
+  const { user_id } = res.locals.token;
+  const game = await Games.find({ 'g.id': game_id }, true);
+  res.locals.game = game;
+
+  if (parseInt(game.owner) !== parseInt(user_id)) {
+    return res.status(400).json({
+      requestType: 'game',
+      message: 'You are not the game owner, you cannot invite players.'
+    });
+  }
+
+  next();
+}
+
+async function verifyNewLink(req, res, next) {
+  let { game } = res.locals;
+
+  if (!game) {
+    game = await Games.find({ 'g.id': req.params.game_id }, true);
+  }
+
+  if (!game.isJoinable) {
+    return res.status(400).json({
+      requestType: 'game',
+      message: 'Cannot create invite links for unjoinable games.'
+    });
+  }
+
+  next();
+}
 
 async function verifyNewGame(req, res, next) {
   const newGame = req.body;
@@ -38,9 +71,10 @@ async function verifyJoin(req, res, next) {
   const game = await Games.find({ 'g.name': name, 'g.isActive': true }, true);
 
   if (!game) {
-    return res
-      .status(404)
-      .json({ requestType: 'game', message: 'Game cannot be joined.' });
+    return res.status(404).json({
+      requestType: 'game',
+      message: "Game either doesn't exist or has ended."
+    });
   }
 
   if (!game.isJoinable) {
