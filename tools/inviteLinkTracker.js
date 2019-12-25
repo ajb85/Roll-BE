@@ -7,6 +7,8 @@ class Tracker {
   }
 
   add(game_id) {
+    if (!game_id) return;
+
     if (this.gameIDToUUID[game_id]) {
       // If the game already exists here, delete the old entry
       const game_uuid = this.gameIDToUUID[game_id];

@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const Games = require('../models/queries/games.js');
+const Tracker = require('tools/inviteLinkTracker.js');
 
 module.exports = { verifyOwner, verifyNewLink, verifyNewGame, verifyJoin };
 
@@ -66,9 +67,23 @@ async function verifyNewGame(req, res, next) {
 
 async function verifyJoin(req, res, next) {
   const { user_id } = res.locals.token;
-  const { name, password } = req.body;
+  const { name, password, uuid } = req.body;
 
-  const game = await Games.find({ 'g.name': name, 'g.isActive': true }, true);
+  let game;
+  if (uuid) {
+    const game_id = Tracker.find(uuid);
+    console.log('UUID: ', game_id, uuid);
+    game = await Games.find({ 'g.id': game_id, 'g.isActive': true }, true);
+  } else if (name && password) {
+    console.log('NAME: ', name);
+    game = await Games.find({ 'g.name': name, 'g.isActive': true }, true);
+
+    if (game && game.password && !bcrypt.compareSync(password, game.password)) {
+      return res
+        .status(401)
+        .json({ requestType: 'game', message: 'Invalid password.' });
+    }
+  }
 
   if (!game) {
     return res.status(404).json({
@@ -81,12 +96,6 @@ async function verifyJoin(req, res, next) {
     res
       .status(400)
       .json({ requestType: 'game', message: 'Game cannot be joined.' });
-  }
-
-  if (game.password && !bcrypt.compareSync(password, game.password)) {
-    return res
-      .status(401)
-      .json({ requestType: 'game', message: 'Invalid password.' });
   }
 
   if (game.scores[user_id]) {
