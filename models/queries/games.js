@@ -15,10 +15,11 @@ function find(filter, first) {
   return new Query('games AS g')
     .select(
       'g.id AS game_id',
-      'g.name AS name',
-      'g.password AS password',
-      'g.isActive AS isActive',
-      'g.isJoinable AS isJoinable',
+      'g.owner',
+      'g.name',
+      'g.password',
+      'g.isActive',
+      'g.isJoinable',
       "CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(DISTINCT r.dice) END AS rolls",
       'jsonb_object_agg(ps.user_id, ps.*) as scores',
       'count(DISTINCT ps.user_id) as playerCount'
@@ -44,7 +45,7 @@ function edit(filter, newInfo) {
 
 function create(newGame, user_id) {
   return new Query('games')
-    .insert(newGame, '*')
+    .insert({ ...newGame, owner: user_id }, '*')
     .first(true)
     .then(async g => {
       const game_id = g.id;
