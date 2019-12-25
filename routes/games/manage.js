@@ -4,9 +4,15 @@ const bcrypt = require('bcrypt');
 const Games = require('models/queries/games.js');
 const Rolls = require('models/queries/rolls.js');
 
+const Tracker = require('tools/inviteLinkTracker.js');
 const Sockets = require('sockets/');
 
-const { verifyNewGame, verifyJoin } = require('middleware/manageGames.js');
+const {
+  verifyOwner,
+  verifyNewLink,
+  verifyNewGame,
+  verifyJoin
+} = require('middleware/manageGames.js');
 
 router.route('/').get(async (req, res) => {
   const { user_id } = req.locals.token;
@@ -66,5 +72,20 @@ router.delete('/user/leave/:game_id', async (req, res) => {
 
   return res.sendStatus(201);
 });
+
+router.get(
+  '/invite/create/:game_id',
+  verifyOwner,
+  verifyNewLink,
+  async (req, res) => {
+    const { game_id } = req.params;
+
+    const uuid = Tracker.add(game_id);
+
+    return uuid && uuid.length
+      ? res.status(201).json({ uuid })
+      : res.status(400).json({ message: 'Error creating a new uuid' });
+  }
+);
 
 module.exports = router;
