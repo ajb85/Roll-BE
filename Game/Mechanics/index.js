@@ -90,6 +90,8 @@ async function endGame(game_id) {
       return Users.edit({ id: u.id }, update);
     })
   );
+
+  return finished;
 }
 
 function getDieValue(num) {
