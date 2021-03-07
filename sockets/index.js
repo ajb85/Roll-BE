@@ -1,7 +1,8 @@
-const http = require('config/http.js');
-const io = require('socket.io')(http);
-const reqDir = require('require-dir');
-const listeners = reqDir('./listeners/');
+const reqDir = require("require-dir");
+const listeners = reqDir("./listeners/");
+const http = require("config/http.js");
+const cors = { origin: process.env.FRONTEND_URL, methods: ["GET", "POST"] };
+const io = require("socket.io")(http, { cors });
 
 class SocketsManager {
   constructor() {
@@ -9,12 +10,12 @@ class SocketsManager {
     this.connected = {};
     this.userToSocket = {};
 
-    console.log('\nSOCKETS ONLINE');
+    console.log("\nSOCKETS ONLINE");
 
-    this.io.on('connection', socket => {
-      socket.user = { username: 'New Socket' };
+    this.io.on("connection", (socket) => {
+      socket.user = { username: "New Socket" };
       this.connected[socket.id] = socket;
-      console.log('Client Connected');
+      console.log("Client Connected");
       // socket.emit('connect', 'You are now online');
       for (let l in listeners) {
         socket.on(l, listeners[l].bind(this, socket));
@@ -24,7 +25,7 @@ class SocketsManager {
         error: true,
         subscribe: true,
         disconnect: true,
-        connect: true
+        connect: true,
       };
     });
   }
@@ -65,14 +66,14 @@ class SocketsManager {
 
   sendTurn(userData, turnData) {
     const socket_id = this._getSocketIDFromUserData(userData);
-    this.emitToRoom(socket_id, turnData.name, 'turns', turnData);
+    this.emitToRoom(socket_id, turnData.name, "turns", turnData);
   }
 
   listenToGamesList(userData, games) {
     const socket = this.connected[this._getSocketIDFromUserData(userData)];
 
     if (socket) {
-      games.forEach(room => socket.join(room));
+      games.forEach((room) => socket.join(room));
     }
   }
 
