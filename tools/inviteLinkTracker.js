@@ -1,42 +1,55 @@
-const { v4: uuid } = require("uuid");
+const validCharacters = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","1","2","3","4","5","6","7","8","9"] // prettier-ignore
 
 class Tracker {
   constructor() {
     this.games = {};
-    this.gameIDToUUID = {};
+    this.gameIDToHash = {};
+  }
+
+  get _randomChar() {
+    const index = Math.round(Math.random() * validCharacters.length);
+    return validCharacters[index];
+  }
+
+  get _hash() {
+    let hash;
+    while (!hash || this.games[hash]) {
+      hash = "";
+      for (let i = 0; i < 9; i++) {
+        hash += this._randomChar;
+      }
+    }
+
+    return hash;
   }
 
   add(game_id) {
     if (!game_id) return;
 
-    if (this.gameIDToUUID[game_id]) {
+    if (this.gameIDToHash[game_id]) {
       // If the game already exists here, delete the old entry
-      const game_uuid = this.gameIDToUUID[game_id];
-      delete this.gameIDToUUID[game_id];
-      delete this.games[game_uuid];
+      const hash = this.gameIDToHash[game_id];
+      delete this.gameIDToHash[game_id];
+      delete this.games[hash];
     }
 
-    let newID;
-    while (!newID || this.games[newID]) {
-      // Yes, I'm aware how unlikely this is to ever run more than once
-      newID = uuid();
-    }
+    const hash = this._hash;
 
-    this.games[newID] = game_id;
-    this.gameIDToUUID[game_id] = newID;
+    this.games[hash] = game_id;
+    this.gameIDToHash[game_id] = hash;
 
-    return newID;
+    return hash;
   }
 
-  find(uuid) {
-    return this.games[uuid];
+  find(hash) {
+    return this.games[hash];
   }
 
   delete(game_id) {
-    const game_uuid = this.gameIDToUUID[game_id];
-    const didDelete = !!this.games[game_uuid];
-    delete this.games[game_uuid];
-    delete this.gameIDToUUID[game_id];
+    const hash = this.gameIDToHash[game_id];
+    const didDelete = !!this.games[hash];
+    delete this.games[hash];
+    delete this.gameIDToHash[game_id];
 
     return didDelete;
   }
