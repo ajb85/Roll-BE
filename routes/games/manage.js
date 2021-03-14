@@ -75,7 +75,9 @@ router.delete("/user/leave/:game_id", async (req, res) => {
   return res.sendStatus(201);
 });
 
-router.get("/user/fetch/:game_id", isUserInGame, async (req, res) => {});
+router.get("/user/fetch/:game_id", isUserInGame, async (req, res) => {
+  return res.status(200).json(res.locals.game);
+});
 
 router.get(
   "/invite/create/:game_id",
