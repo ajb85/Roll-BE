@@ -10,9 +10,9 @@ require('express-async-errors');
 require('app-module-path').addPath(__dirname);
 
 require('config/api.js');
-const http = require('config/http.js');
+const server = require('config/server.js');
 
 // const port = process.env.PORT || 4500;
 // http.listen(port, () => console.log(`\n** Running on port ${port} **\n`));
 
-exports.handler = serverless(http);
+exports.handler = serverless(server);
