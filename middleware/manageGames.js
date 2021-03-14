@@ -30,16 +30,18 @@ async function isUserInGame(req, res, next) {
   const { game_id } = req.params;
   const { user_id } = res.locals.token;
 
-  const game = await Games.find({ "g.id": game_id, "ug.user_id": user_id });
+  const game = await Games.find({
+    "g.id": game_id,
+    "ug.user_id": user_id,
+  });
 
-  console.log("GAME: ", game);
-
-  if (!game) {
+  if (!game || !game.length) {
     return res
       .status(400)
       .json({ requestType: "game", message: "You are not in this game." });
   }
 
+  res.locals.game = game[0];
   next();
 }
 
