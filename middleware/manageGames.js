@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const Games = require("../models/queries/games.js");
 const Tracker = require("tools/inviteLinkTracker.js");
+const getGameRound = require("tools/getGameRound.js");
 
 module.exports = {
   verifyOwner,
@@ -52,7 +53,7 @@ async function verifyNewLink(req, res, next) {
     game = await Games.find({ "g.id": req.params.game_id }, true);
   }
 
-  if (!game.isJoinable) {
+  if (getGameRound(game) > 0) {
     return res.status(400).json({
       requestType: "game",
       message: "Cannot create invite links for unjoinable games.",
@@ -100,7 +101,6 @@ async function verifyJoin(req, res, next) {
     console.log("UUID: ", game_id, uuid);
     game = await Games.find({ "g.id": game_id, "g.isActive": true }, true);
   } else if (name && password) {
-    console.log("NAME: ", name);
     game = await Games.find({ "g.name": name, "g.isActive": true }, true);
 
     if (game && game.password && !bcrypt.compareSync(password, game.password)) {
@@ -117,7 +117,7 @@ async function verifyJoin(req, res, next) {
     });
   }
 
-  if (!game.isJoinable) {
+  if (getGameRound(game) > 0) {
     res
       .status(400)
       .json({ requestType: "game", message: "Game cannot be joined." });

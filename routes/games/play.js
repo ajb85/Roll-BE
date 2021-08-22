@@ -1,18 +1,18 @@
-const router = require('express').Router();
+const router = require("express").Router();
 
-const Games = require('models/queries/games.js');
-const Rolls = require('models/queries/rolls.js');
+const Games = require("models/queries/games.js");
+const Rolls = require("models/queries/rolls.js");
 
-const { verifyUserInGame } = require('middleware/playGames.js');
-const { verifyNewRoll, verifyRound } = require('middleware/playGames.js');
+const { verifyUserInGame } = require("middleware/playGames.js");
+const { verifyNewRoll, verifyRound } = require("middleware/playGames.js");
 
-const { getGameRound } = require('Game/Data/');
-const { updateScoreTotals, getDieValue, endGame } = require('Game/Mechanics/');
+const { getGameRound } = require("Game/Data/");
+const { updateScoreTotals, getDieValue, endGame } = require("Game/Mechanics/");
 
-const Sockets = require('sockets/');
+const Sockets = require("sockets/");
 
 router.post(
-  '/:game_id/rollDice',
+  "/:game_id/rollDice",
   verifyUserInGame,
   verifyNewRoll,
   async (req, res) => {
@@ -30,7 +30,7 @@ router.post(
       : lastRoll;
     const savedRoll = await Rolls.saveRoll({ game_id, user_id, dice });
     // await Games.updateLastAction(game_id);
-    const turnRolls = rolls.map(turn => turn.dice);
+    const turnRolls = rolls.map((turn) => turn.dice);
     turnRolls.push(savedRoll.dice);
 
     return res
@@ -40,7 +40,7 @@ router.post(
 );
 
 router.post(
-  '/:game_id/submitRound',
+  "/:game_id/submitRound",
   verifyUserInGame,
   verifyRound,
   async (req, res) => {
@@ -63,7 +63,7 @@ router.post(
 
     const round = await getGameRound({
       game_id,
-      scores: Object.keys(scores).map(userID => scores[userID])
+      scores: Object.keys(scores).map((userID) => scores[userID]),
     });
 
     if (round >= 13) {
@@ -71,7 +71,7 @@ router.post(
     }
     delete res.locals.game.rolls;
     // await Games.updateLastAction(game_id);
-    Sockets.sendTurn({ user_id }, res.locals.game);
+    Sockets.sendTurn(user_id, res.locals.game);
     return res.status(201).json(res.locals.game);
   }
 );

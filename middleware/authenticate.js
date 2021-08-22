@@ -1,22 +1,16 @@
-const jwt = require("jsonwebtoken");
-const secret = require("config/secret.js");
+const decodeJWT = require("tools/decodeJWT.js");
 const Users = require("models/queries/users.js");
 
-module.exports = (req, res, next) => {
-  const token = req.headers.authorization;
-  jwt.verify(token, secret, async (err, decodedToken) => {
-    try {
-      if (err) throw "invalid user";
+module.exports = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization;
+    const { decoded, user } = await decodeJWT(token);
+    if (!decoded || !user) throw "invalid token";
 
-      res.locals.token = decodedToken;
-      const u = await Users.find({ id: decodedToken.user_id }, true);
-
-      if (!u) throw "invalid account";
-
-      res.locals.user = u;
-      next();
-    } catch (err) {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-  });
+    res.locals.token = decoded;
+    res.locals.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
 };

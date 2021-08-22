@@ -19,7 +19,6 @@ function find(filter, first) {
       "g.name",
       "g.password",
       "g.isActive",
-      "g.isJoinable",
       "CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(DISTINCT r.dice) END AS rolls",
       "jsonb_object_agg(ps.user_id, ps.*) as scores",
       "count(DISTINCT ps.user_id) as playerCount"
@@ -77,7 +76,6 @@ async function leave(game_id, user_id) {
 
   if (users && (users.length || users.game_id)) {
     game.isActive = false;
-    game.isJoinable = false;
     delete game.scores[user_id];
     edit({ id: game_id }, { isActive: false, isJoinable: false });
   }

@@ -1,22 +1,34 @@
 const reqDir = require("require-dir");
 const listeners = reqDir("./listeners/");
 const http = require("config/http.js");
-const cors = { origin: process.env.FRONTEND_URL, methods: ["GET", "POST"] };
+const cors = { origin: [process.env.FRONTEND_URL], methods: ["GET", "POST"] };
 const io = require("socket.io")(http, { cors });
+const decodeJWT = require("tools/decodeJWT.js");
+
+io.use(async (socket, next) => {
+  try {
+    const { token } = socket.handshake.auth;
+    const { decoded, user } = token && (await decodeJWT(token));
+    if (decoded && user) {
+      socket.user = user;
+      socket.token = decoded;
+      next();
+    }
+  } catch (err) {}
+});
 
 class SocketsManager {
   constructor() {
     this.io = io;
-    this.connected = {};
+    this.connected = { sockets: {}, users: {} };
     this.userToSocket = {};
 
     console.log("\nSOCKETS ONLINE");
 
     this.io.on("connection", (socket) => {
-      socket.user = { username: "New Socket" };
-      this.connected[socket.id] = socket;
-      console.log("Client Connected");
-      // socket.emit('connect', 'You are now online');
+      this.connected.sockets[socket.id] = socket;
+      this.connected.users[socket.user.id] = socket;
+      console.log(`${socket.user.username} Connected`);
       for (let l in listeners) {
         socket.on(l, listeners[l].bind(this, socket));
       }
@@ -30,10 +42,10 @@ class SocketsManager {
     });
   }
 
-  join(userData, room, config) {
-    const socket = this._getSocketFromUserData(userData);
-    const alreadyJoined = socket.frontendSubscriptions[room];
-    if (!alreadyJoined) {
+  join(id, room, config) {
+    const socket = this._getSocket(id);
+    const didJoin = socket && !socket.frontendSubscriptions[room];
+    if (didJoin) {
       socket.join(room);
       socket.frontendSubscriptions[room] = true;
     }
@@ -45,54 +57,39 @@ class SocketsManager {
       this.emitToRoom(socket.id, room, config.context, config.message);
     }
 
-    return !alreadyJoined;
+    return didJoin;
   }
 
-  leave(userData, room, config) {
-    const socket = this._getSocketFromUserData(userData);
+  leave(id, room, config) {
+    const socket = this._getSocket(id);
 
     console.log(`${socket.user.username} is leaving ${room}`);
     socket.leave(room);
 
     if (config) {
-      this.emitToRoom(socket.id, room, config.context, config.message);
+      this.emitToRoom(id, room, config.context, config.message);
     }
   }
 
-  emitToRoom(socket_id, room, context, message) {
-    console.log(`EMITTING TO ${room}[${context}]: `);
-    this.connected[socket_id].to(room).emit(room, context, message);
+  emitToRoom(id, room, context, message) {
+    this._getSocket(id).to(room).emit(room, context, message);
   }
 
-  sendTurn(userData, turnData) {
-    const socket_id = this._getSocketIDFromUserData(userData);
-    this.emitToRoom(socket_id, turnData.name, "turns", turnData);
+  sendTurn(id, turnData) {
+    const socket = this._getSocket(id);
+    this.emitToRoom(socket.id, turnData.name, "turns", turnData);
   }
 
-  listenToGamesList(userData, games) {
-    const socket = this.connected[this._getSocketIDFromUserData(userData)];
+  listenToGamesList(id, games) {
+    const socket = this._getSocket(id);
 
     if (socket) {
       games.forEach((room) => socket.join(room));
     }
   }
 
-  getSocketIDByUserID(user_id) {
-    return this.userToSocket[user_id];
-  }
-
-  isSocketConnected(socket_id) {
-    return this.connected[socket_id];
-  }
-
-  _getSocketIDFromUserData({ user_id, socket_id }) {
-    return user_id ? this.getSocketIDByUserID(user_id) : socket_id;
-  }
-
-  _getSocketFromUserData({ user_id, socket_id }) {
-    return user_id
-      ? this.connected[this.getSocketIDByUserID(user_id)]
-      : this.connected[socket_id];
+  _getSocket(id) {
+    return this.connected.sockets[id] || this.connected.users[id];
   }
 }
 

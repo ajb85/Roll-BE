@@ -1,5 +1,5 @@
-const { isValidEmail, isValidUsername } = require('tools/inputEvaluation.js');
-const Users = require('../models/queries/users.js');
+const { isValidEmail, isValidUsername } = require("tools/inputEvaluation.js");
+const Users = require("../models/queries/users.js");
 
 module.exports = { parseInput, verifyAccountInfo };
 
@@ -24,13 +24,13 @@ async function verifyAccountInfo(req, res, next) {
     if (email && !isValidEmail(email)) {
       return res
         .status(400)
-        .json({ requestType: 'register', message: 'Invalid email format' });
+        .json({ requestType: "register", message: "Invalid email format" });
     }
 
     if (username && !isValidUsername(username)) {
       return res.status(400).json({
-        requestType: 'register',
-        message: 'Only alphanumeric characters allowed in a username'
+        requestType: "register",
+        message: "Only alphanumeric characters allowed in a username",
       });
     }
 
@@ -40,18 +40,19 @@ async function verifyAccountInfo(req, res, next) {
     if (usernameExists) {
       return res
         .status(400)
-        .json({ requestType: 'register', message: 'Username already in use' });
+        .json({ requestType: "register", message: "Username already in use" });
     }
+
     if (emailExists) {
       return res
         .status(400)
-        .json({ requestType: 'register', message: 'Email already in use' });
+        .json({ requestType: "register", message: "Email already in use" });
     }
   }
   password && ((username && email) || account)
     ? next()
     : res.status(400).json({
         message:
-          'If registering, provide password, username, and email.  If logging in, include account and password'
+          "If registering, provide password, username, and email.  If logging in, include account and password",
       });
 }
