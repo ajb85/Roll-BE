@@ -42,50 +42,14 @@ class SocketsManager {
     });
   }
 
-  join(id, room, config) {
-    const socket = this._getSocket(id);
-    const didJoin = socket && !socket.frontendSubscriptions[room];
-    if (didJoin) {
-      socket.join(room);
-      socket.frontendSubscriptions[room] = true;
-    }
-
-    if (config) {
-      // If the user joining this room should be emitted to the other users
-      // in that room (ie: "Username has joined the chat"), supply a config
-      // object, including the context and message that should be sent to the FE
-      this.emitToRoom(socket.id, room, config.context, config.message);
-    }
-
-    return didJoin;
-  }
-
-  leave(id, room, config) {
-    const socket = this._getSocket(id);
-
-    console.log(`${socket.user.username} is leaving ${room}`);
-    socket.leave(room);
-
-    if (config) {
-      this.emitToRoom(id, room, config.context, config.message);
-    }
-  }
-
-  emitToRoom(id, room, context, message) {
-    this._getSocket(id).to(room).emit(room, context, message);
-  }
-
-  sendTurn(id, turnData) {
-    const socket = this._getSocket(id);
-    this.emitToRoom(socket.id, turnData.name, "turns", turnData);
-  }
-
-  listenToGamesList(id, games) {
-    const socket = this._getSocket(id);
-
-    if (socket) {
-      games.forEach((room) => socket.join(room));
-    }
+  emitGameUpdate(userList = [], g = {}) {
+    const { rolls, ...game } = g;
+    console.log("EMITTING GAME UPDATES TO : ", userList);
+    userList.forEach((user_id) => {
+      const s = this._getSocket(user_id);
+      console.log("EMITTING TO SOCKET: ", s);
+      s?.emit("gameUpdates", game);
+    });
   }
 
   _getSocket(id) {

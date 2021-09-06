@@ -14,6 +14,7 @@ const {
   verifyJoin,
   isUserInGame,
 } = require("middleware/manageGames.js");
+const getUserListForGame = require("middleware/getUserListForGame.js");
 
 router.route("/").get(async (req, res) => {
   const { user_id } = req.locals.token;
@@ -31,13 +32,10 @@ router.route("/").get(async (req, res) => {
 router.get("/user", async (req, res) => {
   const { user_id } = res.locals.token;
   const userGames = await Games.find({ "u.id": user_id });
-  console.log("GETTING GAMES");
-  const noPassword = userGames.map(({ password, ...game }) => game);
-  const gamesList = noPassword.map(({ name }) => name);
+  const gamesList = userGames.map(({ name }) => name);
 
-  Sockets.listenToGamesList(user_id, gamesList);
-
-  return res.status(200).json(noPassword);
+  console.log("USER GAME LIST: ", gamesList);
+  return res.status(200).json(userGames);
 });
 
 router.post("/user/create", verifyNewGame, async (req, res) => {
@@ -46,52 +44,45 @@ router.post("/user/create", verifyNewGame, async (req, res) => {
     req.body.password = bcrypt.hashSync(req.body.password, 10);
   }
   const newGame = await Games.create(req.body, user_id);
-  Sockets.join(user_id, newGame.name);
+  // Sockets.join(user_id, newGame.name);
 
   return res.status(201).json(newGame);
 });
 
-router.post("/user/join", verifyJoin, async (req, res) => {
+router.post("/user/join", verifyJoin, getUserListForGame, async (req, res) => {
   const { user_id } = res.locals.token;
   const {
     game: { game_id },
+    userList,
   } = res.locals;
 
   const game = await Games.join(game_id, user_id);
   delete game.rolls;
-  Sockets.join(user_id, game.name, { context: "userList", message: game });
-
+  Sockets.emitGameUpdate(userList, game);
   return res.status(201).json(game);
 });
 
-router.delete("/user/leave/:game_id", async (req, res) => {
+router.delete("/user/leave/:game_id", getUserListForGame, async (req, res) => {
   const { user_id } = res.locals.token;
   const { game_id } = req.params;
   const game = await Games.leave(game_id, user_id);
 
-  const config = game.isActive ? { context: "userList", message: game } : null;
-  Sockets.leave(user_id, game.name, config);
-
-  return res.sendStatus(201);
+  Sockets.emitGameUpdate(res.locals.userList, game);
+  return res.sendStatus(200).json({ game_id });
 });
 
 router.get("/user/fetch/:game_id", isUserInGame, async (req, res) => {
   return res.status(200).json(res.locals.game);
 });
 
-router.get(
-  "/invite/create/:game_id",
-  verifyOwner,
-  verifyNewLink,
-  async (req, res) => {
-    const { game_id } = req.params;
+router.get("/invite/create/:game_id", verifyOwner, verifyNewLink, async (req, res) => {
+  const { game_id } = req.params;
 
-    const uuid = Tracker.add(game_id);
+  const uuid = Tracker.add(game_id);
 
-    return uuid && uuid.length
-      ? res.status(201).json({ uuid })
-      : res.status(400).json({ message: "Error creating a new uuid" });
-  }
-);
+  return uuid && uuid.length
+    ? res.status(201).json({ uuid })
+    : res.status(400).json({ message: "Error creating a new uuid" });
+});
 
 module.exports = router;

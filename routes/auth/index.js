@@ -21,9 +21,7 @@ router.post("/", verifyAccountInfo, async (req, res) => {
     };
     const new_account = await Users.create(newUser);
     delete new_account.password;
-    return res
-      .status(201)
-      .json({ ...new_account, token: generateToken(new_account) });
+    return res.status(201).json({ ...new_account, token: generateToken(new_account) });
 
     /* LOGIN TO EXISTING ACCOUNT */
   } else if (account) {
@@ -37,9 +35,7 @@ router.post("/", verifyAccountInfo, async (req, res) => {
         token: generateToken(user),
       });
     } else {
-      return res
-        .status(401)
-        .json({ requestType: "login", message: "Invalid Credentials" });
+      return res.status(401).json({ requestType: "login", message: "Invalid Credentials" });
     }
   }
 });
@@ -64,6 +60,7 @@ router.post("/", verifyAccountInfo, async (req, res) => {
 
 router.get("/", auth, (req, res) => {
   const { user } = res.locals;
+  user.token = generateToken(user);
   return res.status(200).json(user);
 });
 

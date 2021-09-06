@@ -33,8 +33,6 @@ module.exports = class Query {
   }
 
   run() {
-    // console.log("QUERY: ", this.text);
-    // console.log("VALUES: ", this.values);
     if (this.returning) {
       this.text += ` RETURNING ${this.returning}`;
     }
@@ -43,9 +41,6 @@ module.exports = class Query {
       .query({ text: this.text, values: this.values })
       .then((res) => {
         const data = this.first ? res.rows[0] : res.rows;
-        if (!this.callback) {
-          // console.log('RETURNING DATA: ', data);
-        }
         return this.callback ? this.callback(data) : data;
       })
       .catch((err) => console.error("QUERY ERROR: ", err));
@@ -61,8 +56,7 @@ module.exports = class Query {
         if (x.substring(0, 4).toLowerCase() === "case") {
           return x;
         }
-        const toSplit =
-          x.indexOf("AS") > 0 ? " AS " : x.indexOf("as") ? " as " : " ";
+        const toSplit = x.indexOf("AS") > 0 ? " AS " : x.indexOf("as") ? " as " : " ";
         const split = x.split(toSplit);
         if (split[0] === "*") {
           return x;
@@ -140,16 +134,12 @@ module.exports = class Query {
   }
 
   groupBy(...arg) {
-    this.text += ` GROUP BY ${arg
-      .map((str) => this._dotQuotes(str))
-      .join(", ")}`;
+    this.text += ` GROUP BY ${arg.map((str) => this._dotQuotes(str)).join(", ")}`;
     return this;
   }
 
   orderBy(...arg) {
-    this.text += ` ORDER BY ${arg
-      .map((str) => this._dotQuotes(str))
-      .join(", ")}`;
+    this.text += ` ORDER BY ${arg.map((str) => this._dotQuotes(str)).join(", ")}`;
     return this;
   }
 
@@ -201,9 +191,7 @@ module.exports = class Query {
           ? afterDotStr === "*"
             ? afterDotStr
             : `"${afterDotStr}"`
-          : `"${str.substring(dotIndex + 1, parensIndex)}"${y.substring(
-              parensIndex
-            )}`;
+          : `"${str.substring(dotIndex + 1, parensIndex)}"${y.substring(parensIndex)}`;
       return `${str.substring(0, dotIndex + 1)}${quotationsStr}`;
     } else {
       return str[0] === '"' || str[0] === "'"
