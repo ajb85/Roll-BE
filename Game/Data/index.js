@@ -6,6 +6,7 @@ module.exports = {
   isPlayableCategory,
   isGameJoinable,
   getWinners,
+  getHighestScore,
 };
 
 function getGameRound(game) {
@@ -84,22 +85,24 @@ function getUsersOnRound(game) {
   return users;
 }
 
+function getHighestScore(game) {
+  return Object.values(game.scores).reduce(
+    (highest, { score }) => (score["Grand Total"] > highest ? score["Grand Total"] : highest),
+    0
+  );
+}
+
 function getWinners(game) {
   if (Number(game.currentRound) >= 13) {
     const winnerLookup = Object.keys(game.scores).reduce((w, userID) => {
-      if (!w) {
-        return { [userID]: true };
-      }
-
       const score = game.scores[userID].score["Grand Total"];
-      const top = game.scores[w[0]].score["Grand Total"];
-
-      if (score > top) {
-        return { [userID]: true };
-      } else if (score === top) {
+      if (!w || score > w.score) {
+        return { [userID]: true, score: game.scores[userID].score["Grand Total"] };
+      } else if (score === w.score) {
         w.userID = true;
         return w;
       }
+
       return w;
     }, null);
 

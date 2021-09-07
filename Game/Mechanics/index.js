@@ -44,10 +44,10 @@ const getScore = {
   "3 of a Kind": (dice) => multiple(3, dice),
   "4 of a Kind": (dice) => multiple(4, dice),
   "Roll!": (dice) => multiple(5, dice),
-  "Full House": (dice) => multiple([2, 3], dice),
+  "Full House": fullHouse,
   "Sm Straight": (dice) => inARow(4, dice),
   "Lg Straight": (dice) => inARow(5, dice),
-  "Free Space": (dice) => freeSpace(dice),
+  "Free Space": freeSpace,
 };
 
 function getCategoryScore(category, dice) {
@@ -64,6 +64,7 @@ async function endGame(game_id, user_id) {
   if (users.length > 1) {
     const winners = Object.entries(finished.scores).reduce((w, [userID, { isWinner }]) => {
       w[userID] = isWinner;
+      return w;
     }, {});
 
     await Promise.all(
@@ -90,22 +91,28 @@ function getDieValue(num) {
 }
 
 function single(num, dice) {
-  return dice.filter((d) => parseInt(d, 10) === parseInt(num, 10)).length * num;
+  return dice.filter((d) => Number(d) === Number(num)).length * num;
 }
 
 function multiple(num, dice) {
-  const count = new Array(5).fill(0);
+  const count = getSortedNumberOfEachDice(dice);
+  return count[0] >= num ? (num === 5 ? 50 : freeSpace(dice)) : 0;
+}
+
+function fullHouse(dice) {
+  const count = getSortedNumberOfEachDice(dice);
+  return count[0] === 3 && count[1] === 2 ? 25 : 0;
+}
+
+function getSortedNumberOfEachDice(dice) {
+  const count = new Array(6).fill(0);
 
   dice.forEach((d) => {
     count[d - 1] += 1;
   });
-  count.sort();
-  if (Array.isArray(num)) {
-    // Full House
-    return count[count.length - 1] === 3 && count[count.length - 2] === 2 ? 25 : 0;
-  } else {
-    return count[count.length - 1] >= num ? (num === 5 ? 50 : freeSpace(dice)) : 0;
-  }
+
+  count.sort(sortGreatestToLeast);
+  return count;
 }
 
 const inARowScore = { 4: 30, 5: 40 };
@@ -133,4 +140,8 @@ function isRoll(dice) {
 
 function freeSpace(dice) {
   return dice.reduce((acc, cur) => acc + cur);
+}
+
+function sortGreatestToLeast(a, b) {
+  return b - a;
 }
