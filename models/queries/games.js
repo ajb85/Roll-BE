@@ -95,9 +95,9 @@ async function leave(game_id, user_id) {
   await new Query("users_in_game").delete({ game_id, user_id }).run();
   await new Query("scores").delete({ game_id, user_id }).run();
   const game = await find({ "g.id": game_id }, true);
-  const users = Object.keys(game.scores);
+  const users = game && Object.keys(game.scores);
 
-  if (!users?.length) {
+  if (game && !users?.length) {
     game.isActive = false;
     edit({ id: game_id }, { isActive: false });
   }
