@@ -34,7 +34,6 @@ router.get("/user", async (req, res) => {
   const userGames = await Games.find({ "u.id": user_id });
   const gamesList = userGames.map(({ name }) => name);
 
-  console.log("USER GAME LIST: ", gamesList);
   return res.status(200).json(userGames);
 });
 
