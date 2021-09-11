@@ -1,5 +1,4 @@
 const decodeJWT = require("tools/decodeJWT.js");
-const Users = require("models/queries/users.js");
 
 module.exports = async (req, res, next) => {
   try {
