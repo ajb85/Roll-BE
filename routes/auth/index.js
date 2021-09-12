@@ -8,9 +8,11 @@ const { verifyAccountInfo } = require("middleware/accounts.js");
 const { isValidEmail } = require("tools/inputEvaluation.js");
 
 router.post("/", verifyAccountInfo, async (req, res) => {
+  console.log("ACCOUnt ENDPOINT");
   const { username, email, account, password } = res.locals.user;
 
   if (username && email) {
+    console.log("REGISTER");
     /* REGISTER NEW ACCOUNT */
     const newUser = {
       username,
@@ -19,7 +21,9 @@ router.post("/", verifyAccountInfo, async (req, res) => {
       wins: 0,
       losses: 0,
     };
+    console.log("CREATING ACCOUNT");
     const new_account = await Users.create(newUser);
+    console.log("CREATED ACCOUNT");
     delete new_account.password;
     return res.status(201).json({ ...new_account, token: generateToken(new_account) });
 
