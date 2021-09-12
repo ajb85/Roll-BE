@@ -5,7 +5,7 @@ const server = require("./server");
 
 server.use(helmet());
 server.use(express.json());
-server.use(cors({ origin: process.env.FRONTEND_URL }));
+server.use(cors());
 
 // Middleware
 const errorHandler = require("middleware/errorHandling.js");
