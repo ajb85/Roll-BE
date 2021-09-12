@@ -5,6 +5,9 @@ const connection =
   environment === "production"
     ? {
         connectionString: process.env.DATABASE_URL,
+        ssl: {
+          rejectUnauthorized: false,
+        },
       }
     : environment === "development"
     ? {
