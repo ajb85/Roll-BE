@@ -53,7 +53,6 @@ router.post(
     }
 
     const { rolls, ...game } = res.locals.game;
-    console.log("\n\n EMIT TO : ", res.locals.userList, game, "\n\n");
     Sockets.emitGameUpdate(res.locals.userList, game);
     return res.status(201).json(game);
   }

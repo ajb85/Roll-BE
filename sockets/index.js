@@ -28,7 +28,7 @@ class SocketsManager {
     this.io.on("connection", (socket) => {
       this.connected.sockets[socket.id] = socket;
       this.connected.users[socket.user.id] = socket;
-      console.log(`\n\n${socket.user.username} Connected\n\n`);
+      console.log(`${socket.user.username} Connected`);
       for (let l in listeners) {
         socket.on(l, listeners[l].bind(this, socket));
       }
@@ -37,12 +37,8 @@ class SocketsManager {
 
   emitGameUpdate(userList = [], g = {}) {
     const { rolls, ...game } = g;
-    console.log("\n\nEMITING TO: ", userList);
-    console.log("\nWITH GAME: ", game);
-    console.log("\n\n SCORE: ", game.scores);
     userList.forEach((user_id) => {
       const s = this._getSocket(user_id);
-      console.log("\n\nEMIT TO: ", s?.user?.username, "\n\n");
       s?.emit("gameUpdates", game);
     });
   }
