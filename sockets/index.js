@@ -39,7 +39,7 @@ class SocketsManager {
     const { rolls, ...game } = g;
     userList.forEach((user_id) => {
       const s = this._getSocket(user_id);
-      console.log("\n\nEMIT TO: ", socket?.user, "\n\n");
+      console.log("\n\nEMIT TO: ", s?.user, "\n\n");
       s?.emit("gameUpdates", game);
     });
   }
