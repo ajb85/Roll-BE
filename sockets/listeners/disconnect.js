@@ -1,6 +1,6 @@
 module.exports = function (socket) {
   const name = socket?.user?.username || "SOCKET";
-  console.log(`${name} Disconnectd`);
+  console.log(`\n\n${name} Disconnected\n\n`);
   const user = this.connected[socket.id];
 
   if (user) {
