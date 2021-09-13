@@ -32,13 +32,6 @@ class SocketsManager {
       for (let l in listeners) {
         socket.on(l, listeners[l].bind(this, socket));
       }
-
-      socket.frontendSubscriptions = {
-        error: true,
-        subscribe: true,
-        disconnect: true,
-        connect: true,
-      };
     });
   }
 
