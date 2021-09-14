@@ -63,18 +63,20 @@ async function verifyNewLink(req, res, next) {
 async function verifyNewGame(req, res, next) {
   const newGame = req.body;
 
-  if (!newGame.name && !nameGame.private) {
+  if (!newGame.name && !newGame.private) {
     return res
       .status(400)
       .json({ requestType: "game", message: "New public games must have a name" });
   }
 
   const existingGame =
-    !nameGame.private && (await Games.find({ name: newGame.name, isActive: true }, true));
+    !newGame.private &&
+    (await Games.find({ name: newGame.name, isActive: true, private: false }, true));
+
   if (existingGame) {
     return res
       .status(400)
-      .json({ requestType: "game", message: "A public game already exists with that name" });
+      .json({ requestType: "game", message: "A game already exists with that name" });
   }
 
   req.body = { name: newGame.name, private: newGame.private };
@@ -101,7 +103,7 @@ async function verifyJoin(req, res, next) {
   }
 
   if (!game.isJoinable) {
-    res
+    return res
       .status(400)
       .json({ requestType: "game", message: "The host has already started the game." });
   }
