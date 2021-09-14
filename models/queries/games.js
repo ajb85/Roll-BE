@@ -3,8 +3,7 @@ const { clearRolls } = require("./rolls.js");
 const getGameWithStatuses = require("tools/getGameWithStatuses.js");
 
 module.exports = {
-  find: findWithoutPassword,
-  findWithPassword,
+  find,
   edit,
   create,
   join,
@@ -13,23 +12,17 @@ module.exports = {
   updateLastAction,
 };
 
-function find(filter, first, withPassword) {
-  const select = [
-    "g.id AS game_id",
-    "g.owner",
-    "g.name",
-    "g.isActive",
-    "CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(DISTINCT r.dice) END AS rolls",
-    "jsonb_object_agg(ps.user_id, ps.*) as scores",
-    "count(DISTINCT ps.user_id) as playerCount",
-  ];
-
-  if (withPassword) {
-    select.push("g.password");
-  }
-
+function find(filter, first) {
   return new Query("games AS g")
-    .select(...select)
+    .select(
+      "g.id AS game_id",
+      "g.owner",
+      "g.name",
+      "g.isActive",
+      "CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(DISTINCT r.dice) END AS rolls",
+      "jsonb_object_agg(ps.user_id, ps.*) as scores",
+      "count(DISTINCT ps.user_id) as playerCount"
+    )
     .join("users_in_game as ug", { "ug.game_id": "g.id" })
     .join("users as u", { "u.id": "ug.user_id" })
     .join("player_scores as ps", { "ps.game_id": "g.id" })
@@ -48,14 +41,6 @@ function find(filter, first, withPassword) {
         : getGameWithStatuses(results, user_id);
     })
     .run();
-}
-
-function findWithoutPassword(filter, first) {
-  return find(filter, first, false);
-}
-
-function findWithPassword(filter, first) {
-  return find(filter, first, true);
 }
 
 function edit(filter, newInfo) {

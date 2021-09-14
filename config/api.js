@@ -5,7 +5,7 @@ const server = require("./server");
 
 server.use(helmet());
 server.use(express.json());
-server.use(cors());
+server.use(cors({ origin: process.env.FRONTEND_URL }));
 
 // Middleware
 const errorHandler = require("middleware/errorHandling.js");
@@ -22,5 +22,4 @@ server.get("/", (req, res) => {
   res.send("It's working!");
 });
 
-//async error handling middleware MUST come after routes or else will just throw Type error
 server.use(errorHandler);

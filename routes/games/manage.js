@@ -18,7 +18,7 @@ const getUserListForGame = require("middleware/getUserListForGame.js");
 
 router.route("/").get(async (req, res) => {
   const { user_id } = req.locals.token;
-  const publicGamesList = await Games.find({ "g.password": null });
+  const publicGamesList = await Games.find({ "g.private": false });
 
   publicGamesList &&
     publicGamesList.forEach(async (g) => {
@@ -39,26 +39,17 @@ router.get("/user", async (req, res) => {
 
 router.post("/user/create", verifyNewGame, async (req, res) => {
   const { user_id } = res.locals.token;
-  if (req.body.password) {
-    req.body.password = bcrypt.hashSync(req.body.password, 10);
-  }
   const newGame = await Games.create(req.body, user_id);
-  // Sockets.join(user_id, newGame.name);
-
   return res.status(201).json(newGame);
 });
 
 router.post("/user/join", verifyJoin, getUserListForGame, async (req, res) => {
   const { user_id } = res.locals.token;
-  const {
-    game: { game_id },
-    userList,
-  } = res.locals;
+  const { game, userList } = res.locals;
 
-  const game = await Games.join(game_id, user_id);
-  delete game.rolls;
-  Sockets.emitGameUpdate(userList, game);
-  return res.status(201).json(game);
+  const { rolls, ...g } = await Games.join(game.game_id, user_id);
+  Sockets.emitGameUpdate(userList, g);
+  return res.status(201).json({ ...g, rolls });
 });
 
 router.delete("/user/leave/:game_id", getUserListForGame, async (req, res) => {

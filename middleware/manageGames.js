@@ -63,35 +63,34 @@ async function verifyNewLink(req, res, next) {
 async function verifyNewGame(req, res, next) {
   const newGame = req.body;
 
-  if (!newGame.name) {
-    return res.status(400).json({ requestType: "game", message: "New games must have a name" });
+  if (!newGame.name && !nameGame.private) {
+    return res
+      .status(400)
+      .json({ requestType: "game", message: "New public games must have a name" });
   }
 
-  const existingGame = await Games.find({ name: req.body.name.toString(), isActive: true }, true);
+  const existingGame =
+    !nameGame.private && (await Games.find({ name: newGame.name, isActive: true }, true));
   if (existingGame) {
     return res
       .status(400)
-      .json({ requestType: "game", message: "A game already exists with that name" });
+      .json({ requestType: "game", message: "A public game already exists with that name" });
   }
 
-  req.body = { name: req.body.name, password: req.body.password || null };
+  req.body = { name: newGame.name, private: newGame.private };
   next();
 }
 
 async function verifyJoin(req, res, next) {
   const { user_id } = res.locals.token;
-  const { name, password, uuid } = req.body;
+  const { name, uuid } = req.body;
 
   let game;
   if (uuid) {
     const game_id = Tracker.find(uuid);
-    game = await Games.findWithPassword({ "g.id": game_id, "g.isActive": true }, true);
-  } else if (name && password) {
-    game = await Games.findWithPassword({ "g.name": name, "g.isActive": true }, true);
-
-    if (game && game.password && !bcrypt.compareSync(password, game.password)) {
-      return res.status(401).json({ requestType: "game", message: "Invalid password." });
-    }
+    game = await Games.find({ "g.id": game_id, "g.isActive": true }, true);
+  } else if (name) {
+    game = await Games.find({ "g.name": name, "g.isActive": true, "g.private": false }, true);
   }
 
   if (!game) {
