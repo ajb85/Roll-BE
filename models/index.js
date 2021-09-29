@@ -39,7 +39,7 @@ module.exports = class Query {
     if (this.returning) {
       this.text += ` RETURNING ${this.returning}`;
     }
-    console.log("QUERY:\n", this.text, "\n", this.values);
+    // console.log("QUERY:\n", this.text, "\n", this.values);
     return this.client
       .query({ text: this.text, values: this.values })
       .then((res) => {
