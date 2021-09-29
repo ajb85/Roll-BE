@@ -9,7 +9,7 @@ module.exports = { verifyNewRoll, verifyRound, verifyUserInGame };
 async function verifyUserInGame(req, res, next) {
   const { user_id } = res.locals.token;
   const { game_id } = req.params;
-  const game = await Games.find({ "g.id": game_id }, true);
+  const game = await Games.find({ "g.id": game_id, "u.id": user_id }, true);
   if (!game) {
     return res.status(404).json({ message: "Game not found" });
   }
@@ -106,6 +106,6 @@ async function verifyRound(req, res, next) {
 }
 
 async function _isPlayerInGame(game_id, user_id) {
-  const game = await Games.find({ "g.id": game_id }, true);
+  const game = await Games.find({ "g.id": game_id, "u.id": user_id }, true);
   return !!game.scores[user_id];
 }

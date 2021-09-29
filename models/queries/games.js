@@ -10,23 +10,38 @@ module.exports = {
   leave,
   saveScore,
   updateLastAction,
+  voteForRecreate,
 };
 
 function find(filter, first) {
+  const rollsJoin = { "r.game_id": "g.id" };
+  const user_id = filter["u.id"] || filter["ug.user_id"];
+
+  if (user_id) {
+    rollsJoin["r.user_id"] = user_id;
+  }
+
+  const rollsSubQuery = new Query("rolls")
+    .select("CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(dice ORDER BY id ASC) END")
+    .where({ user_id }).queryString;
+
   return new Query("games AS g")
     .select(
       "g.id AS game_id",
       "g.owner",
       "g.name",
       "g.isActive",
-      "CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(DISTINCT r.dice) END AS rolls",
-      "jsonb_object_agg(ps.user_id, ps.*) as scores",
+      "g.private",
+      `(${rollsSubQuery}) AS rolls`,
+      "jsonb_object_agg(ps.user_id, ps.*) AS scores",
+      "COALESCE(jsonb_object_agg(v.user_id, json_build_object('vote', v.vote)) FILTER (WHERE v.user_id IS NOT NULL), '{}') AS votes",
       "count(DISTINCT ps.user_id) as playerCount"
     )
     .join("users_in_game as ug", { "ug.game_id": "g.id" })
     .join("users as u", { "u.id": "ug.user_id" })
     .join("player_scores as ps", { "ps.game_id": "g.id" })
-    .join("rolls as r", { "r.game_id": "g.id" }, "LEFT")
+    .join("rolls as r", rollsJoin, "LEFT")
+    .join("recreate_game_votes as v", { "v.game_id": "g.id" }, "LEFT")
     .where(filter)
     .groupBy("g.id", "ps.game_id")
     .first(first)
@@ -48,11 +63,11 @@ function edit(filter, newInfo) {
     .update(newInfo)
     .where(filter)
     .first(true)
-    .then((g) => find({ "g.id": g.id }, true))
+    .then((g) => find({ "g.id": g.id, "u.id": filter["u.id"] || filter["ug.user_id"] }, true))
     .run();
 }
 
-function create(newGame, user_id) {
+function create(newGame, user_id, shouldFind = true) {
   return new Query("games")
     .insert({ ...newGame, owner: user_id }, "*")
     .first(true)
@@ -60,28 +75,33 @@ function create(newGame, user_id) {
       const game_id = g.id;
       await new Query("users_in_game").insert({ game_id, user_id }).run();
       await new Query("scores").insert({ game_id, user_id }).run();
-      return find({ "g.id": g.id, "ug.user_id": user_id }, true);
+      return shouldFind ? find({ "g.id": g.id, "ug.user_id": user_id }, true) : true;
     })
     .run();
 }
 
-function join(game_id, user_id) {
+function join(game_id, user_id, findGame = true) {
   return new Query("users_in_game")
     .insert({ game_id, user_id }, ["*"])
     .first(true)
     .then(async (_) => {
       await new Query("scores").insert({ game_id, user_id }).run();
-      return find({ "g.id": game_id, "ug.user_id": user_id }, true);
+      return findGame ? find({ "g.id": game_id, "ug.user_id": user_id }, true) : true;
     })
     .run();
 }
 
-async function leave(game_id, user_id) {
+async function leave(game_id, user_id, endingGame = false) {
   await new Query("users_in_game").delete({ game_id, user_id }).run();
   await new Query("scores").delete({ game_id, user_id }).run();
-  const game = await find({ "g.id": game_id }, true);
+  let game = await find({ "g.id": game_id, "u.id": user_id }, true);
   const users = game && Object.keys(game.scores);
-
+  if (!endingGame && Number(game.owner) === Number(user_id)) {
+    game = await edit(
+      { "g.id": game_id, "u.id": user_id },
+      { ...game, owner: Object.keys[game.scores][0] }
+    );
+  }
   if (game && !users?.length) {
     game.isActive = false;
     edit({ id: game_id }, { isActive: false });
@@ -104,4 +124,12 @@ function saveScore(filter, newScore) {
 
 function updateLastAction(id) {
   return new Query("games").where({ id }).update({ last_action: new Date() }, ["*"]);
+}
+
+function voteForRecreate(game_id, user_id, vote) {
+  return new Query("recreate_game_votes ")
+    .insert({ game_id, user_id, vote })
+    .first(true)
+    .then(async () => find({ "g.id": game_id, "ug.user_id": user_id }, true))
+    .run();
 }

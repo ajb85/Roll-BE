@@ -13,7 +13,9 @@ const {
   verifyNewGame,
   verifyJoin,
   isUserInGame,
+  verifyRecreateVote,
 } = require("middleware/manageGames.js");
+
 const getUserListForGame = require("middleware/getUserListForGame.js");
 
 router.route("/").get(async (req, res) => {
@@ -58,7 +60,7 @@ router.delete("/user/leave/:game_id", getUserListForGame, async (req, res) => {
   const game = await Games.leave(game_id, user_id);
 
   Sockets.emitGameUpdate(res.locals.userList, game);
-  return res.sendStatus(200).json({ game_id });
+  return res.status(200).json({ game_id });
 });
 
 router.get("/user/fetch/:game_id", isUserInGame, async (req, res) => {
@@ -75,4 +77,68 @@ router.get("/invite/create/:game_id", verifyOwner, verifyNewLink, async (req, re
     : res.status(400).json({ message: "Error creating a new uuid" });
 });
 
+router.post(
+  "/user/recreate/vote/:game_id",
+  verifyRecreateVote,
+  getUserListForGame,
+  async (req, res) => {
+    const { user_id } = res.locals.token;
+    const { game, userList } = res.locals;
+    const { vote } = req.body;
+
+    const updatedGame = await Games.voteForRecreate(game.game_id, user_id, vote);
+    const userIds = Object.keys(updatedGame.votes);
+    const votingIsComplete = Object.keys(updatedGame.scores).length === userIds.length;
+
+    if (votingIsComplete) {
+      updatedGame.votesComplete = true;
+      const yesVotes = Object.entries(updatedGame.votes).reduce((acc, [userId, { vote }]) => {
+        if (vote) {
+          acc.push(userId);
+        }
+
+        return acc;
+      }, []);
+
+      const newGame =
+        yesVotes?.length &&
+        (await Games.create(
+          { private: true, name: updatedGame.name },
+          findNewGameOwner(updatedGame)
+        ));
+
+      const joiningNewGame = yesVotes?.length
+        ? yesVotes.map((userId) => Games.join(newGame.game_id, userId, false))
+        : [];
+
+      const leavingGame = userIds.map((userId) => Games.leave(updatedGame.game_id, userId, true));
+      await Promise.all([...leavingGame, ...joiningNewGame]);
+
+      if (newGame?.game_id) {
+        updatedGame.newGame = newGame.game_id;
+      }
+    }
+
+    Sockets.emitGameUpdate(userList, updatedGame);
+    return res.status(201).json(updatedGame);
+  }
+);
+
 module.exports = router;
+
+function findNewGameOwner(game) {
+  if (game?.votes?.[game.owner]?.vote) {
+    // Keep owner if they're returning
+    return game.owner;
+  }
+
+  return Number(
+    Object.keys(game.scores).find((userId) => {
+      // Find the first user who is sticking around
+      // This function should not run if no users voted to
+      // restart the game
+      const { vote } = game.votes[userId] || {};
+      return !!vote;
+    })
+  );
+}

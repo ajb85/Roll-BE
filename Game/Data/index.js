@@ -10,12 +10,12 @@ module.exports = {
 };
 
 function getGameRound(game) {
-  let lowestRound;
+  let lowestRound = null;
 
   for (let user_id in game.scores) {
     const round = getUserRound(game, user_id);
     game.scores[user_id].round = round;
-    if (!lowestRound || round < lowestRound) {
+    if (lowestRound === null || round < lowestRound) {
       lowestRound = round;
     }
   }

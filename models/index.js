@@ -39,7 +39,7 @@ module.exports = class Query {
     if (this.returning) {
       this.text += ` RETURNING ${this.returning}`;
     }
-
+    console.log("QUERY:\n", this.text, "\n", this.values);
     return this.client
       .query({ text: this.text, values: this.values })
       .then((res) => {
@@ -56,18 +56,24 @@ module.exports = class Query {
   select(...select) {
     const formattedStr = select
       .map((x) => {
-        if (x.substring(0, 4).toLowerCase() === "case") {
+        const isIfStatement = x.substring(0, 4).toLowerCase() === "case";
+        const isSubQuery = x[0] === "(";
+        if (isIfStatement || isSubQuery) {
           return x;
         }
-        const toSplit = x.indexOf("AS") > 0 ? " AS " : x.indexOf("as") ? " as " : " ";
+
+        const toSplit = x.indexOf("AS") > -1 ? " AS " : x.indexOf("as") > -1 ? " as " : " ";
         const split = x.split(toSplit);
+
         if (split[0] === "*") {
           return x;
         }
+
         if (split.length <= 1) {
           return this._dotQuotes(x);
         }
-        return split.map((y) => this._dotQuotes(y)).join(toSplit);
+
+        return split.map(this._dotQuotes.bind(this)).join(toSplit);
       })
       .join(", ");
 
@@ -155,20 +161,38 @@ module.exports = class Query {
     return this;
   }
 
+  get queryString() {
+    let { text } = this;
+    let index = text.indexOf("$");
+
+    while (index !== -1) {
+      const valuesIndex = Number(text[index + 1]) - 1;
+      if (!isNaN(valuesIndex)) {
+        text = text.substring(0, index) + this.values[valuesIndex] + text.substring(index + 2);
+      }
+
+      index = text.indexOf("$", index + 1);
+    }
+
+    return text;
+  }
+
   _dotQuotes(str) {
-    const exitString = {
-      json_build_object: true,
-      row_to_json: true,
-    };
+    if (!str?.indexOf) {
+      return str;
+    }
+
     const openParensIndex = str.indexOf("(");
     if (openParensIndex > -1) {
       const closeParensIndex = str.lastIndexOf(")");
       const aggFunctionName = str.substring(0, openParensIndex).toLowerCase();
 
-      if (exitString[aggFunctionName]) {
+      if (aggFunctionsWithObjects[aggFunctionName.toLowerCase()]) {
         return `${str.substring(0, openParensIndex + 1)}${this._buildObject(
           str.substring(openParensIndex + 1, closeParensIndex).split(", ")
         )})`;
+      } else if (doNotParse[aggFunctionName]) {
+        return str;
       }
 
       return `${str.substring(0, openParensIndex + 1)}${this._dotQuotes(
@@ -194,7 +218,7 @@ module.exports = class Query {
           ? afterDotStr === "*"
             ? afterDotStr
             : `"${afterDotStr}"`
-          : `"${str.substring(dotIndex + 1, parensIndex)}"${y.substring(parensIndex)}`;
+          : `"${str.substring(dotIndex + 1, parensIndex)}"${str.substring(parensIndex)}`;
       return `${str.substring(0, dotIndex + 1)}${quotationsStr}`;
     } else {
       return str[0] === '"' || str[0] === "'"
@@ -216,7 +240,6 @@ module.exports = class Query {
         str += joinTerm;
       }
 
-      // typeof data[key] === 'string' ? this._dotQuotes(data[key]) : data[key]
       this.values.push(data[key]);
       str += ` ${this._dotQuotes(key)} = $${this.values.length}`;
     }
@@ -238,7 +261,6 @@ module.exports = class Query {
         str += ", ";
       }
 
-      // this.values.push(key);
       str += `${key}, ${this._dotQuotes(value)}`;
     }
     return str;
@@ -280,4 +302,14 @@ module.exports = class Query {
     }
     this.returning = arg.join(", ");
   }
+};
+
+const aggFunctionsWithObjects = {
+  json_build_object: true,
+  row_to_json: true,
+  json_object: true,
+};
+
+const doNotParse = {
+  coalesce: true,
 };

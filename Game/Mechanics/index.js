@@ -116,8 +116,9 @@ function getSortedNumberOfEachDice(dice) {
 }
 
 const inARowScore = { 4: 30, 5: 40 };
+const countValue = { 0: 2, 2: 3, 3: 4, 4: 5 };
 function inARow(num, dice) {
-  const copy = [...dice].sort();
+  const copy = [...new Set(dice)].sort();
   const end = copy.length;
 
   let count = 0;
@@ -129,8 +130,9 @@ function inARow(num, dice) {
       // Bail early if num is reached
       return inARowScore[num];
     }
-    count = copy[i] + 1 === copy[i + 1] ? (count === 0 ? 2 : ++count) : count;
+    count = copy[i] + 1 === copy[i + 1] ? countValue[count] : 0;
   }
+
   return count >= num ? inARowScore[num] : 0;
 }
 

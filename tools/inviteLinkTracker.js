@@ -1,4 +1,4 @@
-const validCharacters = ["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","1","2","3","4","5","6","7","8","9"] // prettier-ignore
+const validCharacters = [null, "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","1","2","3","4","5","6","7","8","9", null] // prettier-ignore
 
 class Tracker {
   constructor() {
@@ -7,8 +7,9 @@ class Tracker {
   }
 
   get _randomChar() {
-    const index = Math.round(Math.random() * validCharacters.length);
-    return validCharacters[index];
+    const index = Math.round(Math.random() * (validCharacters.length - 3)) + 1;
+    const char = validCharacters[index];
+    return Math.random() >= 0.5 ? char.toUpperCase() : char;
   }
 
   get _hash() {
@@ -24,7 +25,9 @@ class Tracker {
   }
 
   add(game_id) {
-    if (!game_id) return;
+    if (!game_id) {
+      return;
+    }
 
     if (this.gameIDToHash[game_id]) {
       // If the game already exists here, delete the old entry

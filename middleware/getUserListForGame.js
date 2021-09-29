@@ -9,7 +9,7 @@ module.exports = async function getUserListForGame(req, res, next) {
   }
 
   if (!res.locals.game) {
-    res.locals.game = await Games.find({ "g.id": game_id }, true);
+    res.locals.game = await Games.find({ "g.id": game_id, "u.id": user_id }, true);
   }
 
   const { game } = res.locals;
