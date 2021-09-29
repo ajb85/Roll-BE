@@ -98,7 +98,7 @@ async function verifyJoin(req, res, next) {
   let game;
   if (uuid) {
     const game_id = Tracker.find(uuid);
-    game = await Games.find({ "g.id": game_id, "g.isActive": true, "u.id": user_id }, true);
+    game = await Games.find({ "g.id": game_id, "g.isActive": true }, true);
   } else if (name) {
     game = await Games.find(
       { "g.name": name, "g.isActive": true, "g.private": false, "u.id": user_id },

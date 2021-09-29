@@ -17,13 +17,16 @@ function find(filter, first) {
   const rollsJoin = { "r.game_id": "g.id" };
   const user_id = filter["u.id"] || filter["ug.user_id"];
 
+  const rollsQuery = new Query("rolls").select(
+    "CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(dice ORDER BY id ASC) END"
+  );
+
   if (user_id) {
     rollsJoin["r.user_id"] = user_id;
+    rollsQuery.where({ user_id });
   }
 
-  const rollsSubQuery = new Query("rolls")
-    .select("CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(dice ORDER BY id ASC) END")
-    .where({ user_id }).queryString;
+  const rollsQueryString = rollsQuery.queryString;
 
   return new Query("games AS g")
     .select(
@@ -32,7 +35,7 @@ function find(filter, first) {
       "g.name",
       "g.isActive",
       "g.private",
-      `(${rollsSubQuery}) AS rolls`,
+      `(${rollsQueryString}) AS rolls`,
       "jsonb_object_agg(ps.user_id, ps.*) AS scores",
       "COALESCE(jsonb_object_agg(v.user_id, json_build_object('vote', v.vote)) FILTER (WHERE v.user_id IS NOT NULL), '{}') AS votes",
       "count(DISTINCT ps.user_id) as playerCount"
