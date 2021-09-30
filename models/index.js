@@ -46,7 +46,13 @@ module.exports = class Query {
         const data = this.first ? res.rows[0] : res.rows;
         return this.callback ? this.callback(data) : data;
       })
-      .catch((err) => console.error("QUERY ERROR: ", err));
+      .catch((err) => {
+        console.log(`------ Query Error ------`);
+        console.log(`Text\n${this.text}`);
+        console.log(`Values\n${this.values}`);
+        console.log("Error\n", err);
+        console.log(`-------------------------`);
+      });
   }
 
   table(table) {

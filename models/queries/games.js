@@ -62,11 +62,24 @@ function find(filter, first) {
 }
 
 function edit(filter, newInfo) {
+  let user_id;
+  if (filter["u.id"]) {
+    user_id = filter["u.id"];
+    delete filter["u.id"];
+  }
+
+  if (filter["ug.user_id"]) {
+    user_id = filter["ug.user_id"];
+    delete filter["ug.user_id"];
+  }
+
   return new Query("games")
     .update(newInfo)
     .where(filter)
     .first(true)
-    .then((g) => find({ "g.id": g.id, "u.id": filter["u.id"] || filter["ug.user_id"] }, true))
+    .then((g) => {
+      return find({ "g.id": g.id, "u.id": user_id }, true);
+    })
     .run();
 }
 

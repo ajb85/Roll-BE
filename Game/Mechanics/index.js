@@ -55,7 +55,7 @@ function getCategoryScore(category, dice) {
 }
 
 async function endGame(game_id, user_id) {
-  const updated = await Games.edit({ id: game_id }, { isActive: false });
+  const updated = await Games.edit({ id: game_id, "u.id": user_id }, { isActive: false });
   const finished = user_id ? getGameWithStatuses(updated, user_id) : updated;
 
   const userIDs = Object.keys(finished.scores);
