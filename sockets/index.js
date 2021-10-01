@@ -4,6 +4,7 @@ const http = require("config/http.js");
 const cors = { origin: [process.env.FRONTEND_URL], methods: ["GET", "POST"] };
 const io = require("socket.io")(http, { cors });
 const decodeJWT = require("tools/decodeJWT.js");
+const getGameWithStatuses = require("tools/getGameWithStatuses.js");
 
 io.use(async (socket, next) => {
   try {
@@ -44,13 +45,16 @@ class SocketsManager {
     });
   }
 
-  emitGameUpdate(userList = [], g = {}) {
+  emitGameUpdate(userList = [], g) {
+    if (!g) return;
+
     const { rolls, ...game } = g;
     const emit_id = getEmitID();
     game.game_id && (this.emitLog[game.game_id] = emit_id);
+
     userList.forEach((user_id) => {
       const sockets = this._getSocket(user_id);
-      sockets?.forEach((s) => s.emit("gameUpdates", game, emit_id));
+      sockets?.forEach((s) => s.emit("gameUpdates", getGameWithStatuses(game, user_id), emit_id));
     });
   }
 

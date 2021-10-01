@@ -2,6 +2,7 @@ const router = require("express").Router();
 
 const Games = require("models/queries/games.js");
 const Rolls = require("models/queries/rolls.js");
+const Logs = require("models/queries/gameLogs.js");
 
 const getUserListForGame = require("middleware/getUserListForGame.js");
 const { verifyUserInGame } = require("middleware/playGames.js");
@@ -53,6 +54,12 @@ router.post(
     }
 
     const { rolls, ...game } = res.locals.game;
+    game.logs = await Logs.create({
+      game_id,
+      user_id,
+      action: "scoreSubmit",
+      value: JSON.stringify({ dice: lastRoll, score: updatedScore[category], category }),
+    });
     Sockets.emitGameUpdate(res.locals.userList, game);
     return res.status(201).json(game);
   }

@@ -4,17 +4,18 @@ const getGameWithStatuses = require("tools/getGameWithStatuses.js");
 
 module.exports = { updateScoreTotals, getDieValue, endGame };
 
+const left = {
+  Ones: true,
+  Twos: true,
+  Threes: true,
+  Fours: true,
+  Fives: true,
+  Sixes: true,
+};
+
 function updateScoreTotals(category, userScore, dice) {
   const score = { ...userScore };
   const roundScore = getCategoryScore(category, dice);
-  const left = {
-    Ones: true,
-    Twos: true,
-    Threes: true,
-    Fours: true,
-    Fives: true,
-    Sixes: true,
-  };
 
   score[category] = roundScore;
   score["Grand Total"] += roundScore; // null + 5 = 5

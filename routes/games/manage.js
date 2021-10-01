@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 
 const Games = require("models/queries/games.js");
 const Rolls = require("models/queries/rolls.js");
+const Logs = require("models/queries/gameLogs.js");
 
 const Tracker = require("tools/inviteLinkTracker.js");
 const Sockets = require("sockets/");
@@ -64,6 +65,7 @@ router.delete("/user/leave/:game_id", getUserListForGame, async (req, res) => {
 });
 
 router.get("/user/fetch/:game_id", isUserInGame, async (req, res) => {
+  res.locals.game.logs = await Logs.find({ "gl.game_id": res.locals.game.game_id });
   return res.status(200).json(res.locals.game);
 });
 

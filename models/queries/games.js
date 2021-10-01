@@ -1,6 +1,7 @@
 const Query = require("../index.js");
 const { clearRolls } = require("./rolls.js");
 const getGameWithStatuses = require("tools/getGameWithStatuses.js");
+const { updateScoreTotals } = require("Game/Mechanics/");
 
 module.exports = {
   find,
@@ -133,7 +134,7 @@ function saveScore(filter, newScore) {
     .first(true)
     .then(async (s) => {
       await clearRolls(filter);
-      return find({ "g.id": s.game_id, "ug.user_id": filter.user_id }, true);
+      return find({ "g.id": s.game_id, "u.id": filter.user_id }, true);
     })
     .run();
 }
