@@ -22,11 +22,11 @@ router.post("/react/:log_id", verifyUserInGame, getUserListForGame, async (req, 
     true
   );
 
-  const log = isRemoving
+  const logs = isRemoving
     ? await Logs.deleteReaction(isRemoving.id, game_id)
     : await Logs.react({ user_id, log_id, reaction }, game_id);
-  Sockets.emitGameUpdate(res.locals.userList, { log });
-  return res.status(isRemoving ? 200 : 201).json(log);
+  Sockets.emitGameUpdate(res.locals.userList, { logs });
+  return res.status(isRemoving ? 200 : 201).json(logs);
 });
 
 module.exports = router;
