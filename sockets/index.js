@@ -54,7 +54,10 @@ class SocketsManager {
 
     userList.forEach((user_id) => {
       const sockets = this._getSocket(user_id);
-      sockets?.forEach((s) => s.emit("gameUpdates", getGameWithStatuses(game, user_id), emit_id));
+      const isNotLog = !game.log;
+      sockets?.forEach((s) =>
+        s.emit("gameUpdates", isNotLog ? getGameWithStatuses(game, user_id) : game, emit_id)
+      );
     });
   }
 

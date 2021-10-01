@@ -17,10 +17,9 @@ async function verifyUserInGame(req, res, next) {
   if (!game.isActive) {
     return res.status(400).json({ requestType: "play", message: "Game is no longer active." });
   }
-  if (game_id && !_isPlayerInGame(game_id, user_id)) {
+  if (!game.scores[user_id]) {
     return res.status(400).json({
       requestType: "play",
-      route: true,
       message: "You are not in this game.",
     });
   }
@@ -103,9 +102,4 @@ async function verifyRound(req, res, next) {
   res.locals.lastRoll = rolls[rolls.length - 1].dice;
 
   next();
-}
-
-async function _isPlayerInGame(game_id, user_id) {
-  const game = await Games.find({ "g.id": game_id, "u.id": user_id }, true);
-  return !!game.scores[user_id];
 }

@@ -22,13 +22,20 @@ exports.up = function (knex) {
     .createTable("game_logs_reactions", (tbl) => {
       tbl.increments();
       tbl
+        .integer("user_id")
+        .references("id")
+        .inTable("users")
+        .onUpdate("CASCADE")
+        .onDelete("CASCADE")
+        .notNullable();
+      tbl
         .integer("log_id")
         .references("id")
         .inTable("game_logs")
         .onUpdate("CASCADE")
         .onDelete("CASCADE")
         .notNullable();
-      tbl.text("reaction").notNullable();
+      tbl.jsonb("reaction").notNullable();
     });
 };
 

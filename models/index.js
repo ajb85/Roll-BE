@@ -49,7 +49,7 @@ module.exports = class Query {
       .catch((err) => {
         console.log(`------ Query Error ------`);
         console.log(`Text\n${this.text}`);
-        console.log(`Values\n${this.values}`);
+        console.log(`Values\n!!${this.values.join(", ")}!!`);
         console.log("Error\n", err);
         console.log(`-------------------------`);
       });
@@ -247,7 +247,11 @@ module.exports = class Query {
       }
 
       this.values.push(data[key]);
-      str += ` ${this._dotQuotes(key)} = $${this.values.length}`;
+      if (!key.includes("@>")) {
+        str += ` ${this._dotQuotes(key)} = $${this.values.length}`;
+      } else {
+        str += ` ${key} $${this.values.length}`;
+      }
     }
     return str;
   }

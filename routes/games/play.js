@@ -54,6 +54,7 @@ router.post(
     }
 
     const { rolls, ...game } = res.locals.game;
+
     game.logs = await Logs.create({
       game_id,
       user_id,
