@@ -1,7 +1,6 @@
 const Query = require("../index.js");
 const { clearRolls } = require("./rolls.js");
 const getGameWithStatuses = require("tools/getGameWithStatuses.js");
-const { updateScoreTotals } = require("Game/Mechanics/");
 
 module.exports = {
   find,
@@ -16,7 +15,7 @@ module.exports = {
 
 function find(filter, first) {
   const rollsJoin = { "r.game_id": "g.id" };
-  const user_id = filter["u.id"] || filter["ug.user_id"];
+  const user_id = Number(filter["u.id"] || filter["ug.user_id"]);
 
   const rollsQuery = new Query("rolls").select(
     "CASE WHEN count(r) = 0 THEN '[]' ELSE json_agg(dice ORDER BY id ASC) END"
