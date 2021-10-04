@@ -12,11 +12,13 @@ const errorHandler = require("middleware/errorHandling.js");
 const auth = require("middleware/authenticate.js");
 
 // Routes
-const authRouter = require("routes/auth");
-const gamesRouter = require("routes/games");
+const authRouter = require("routes/auth/");
+const gamesRouter = require("routes/games/");
+const accountRouter = require("routes/account/");
 
 server.use("/api/auth", authRouter);
 server.use("/api/games", auth, gamesRouter);
+server.use("/api/account", auth, accountRouter);
 
 server.get("/", (req, res) => {
   res.send("It's working!");

@@ -1,7 +1,8 @@
 const { isValidEmail, isValidUsername } = require("tools/inputEvaluation.js");
 const Users = require("../models/queries/users.js");
+const UserThemes = require("../models/queries/userThemes");
 
-module.exports = { verifyAccountInfo };
+module.exports = { verifyAccountInfo, verifyUserThemes };
 
 async function verifyAccountInfo(req, res, next) {
   res.locals.user = req.body;
@@ -37,4 +38,17 @@ async function verifyAccountInfo(req, res, next) {
         message:
           "If registering, provide password, username, and email.  If logging in, include account and password",
       });
+}
+
+async function verifyUserThemes(req, res, next) {
+  const { user_id } = res.locals.token;
+  const userThemes = await UserThemes.find({ user_id });
+  res.locals.themes = userThemes?.themes;
+
+  if (!res.locals.themes) {
+    await UserThemes.create({ user_id });
+    res.locals.themes = {};
+  }
+
+  next();
 }
