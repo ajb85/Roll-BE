@@ -19,15 +19,23 @@ router.post("/themes/update", verifyUserThemes, async (req, res) => {
   return res.status(200).json(userThemes);
 });
 
+const defaultThemeNames = {
+  light: true,
+  dark: true,
+};
+
 router.post("/themes/active/:themeName", async (req, res) => {
   const { themeName } = req.params;
   const { user_id } = res.locals.token;
 
-  let userThemes = await UserThemes.find({ user_id }, first);
-  const themes = userThemes || {};
-  const hasTheme = themes?.[themeName];
+  let userThemes = await UserThemes.find({ user_id }, true);
+  const { themes } = userThemes || {};
+  const hasTheme = themes?.[themeName] || defaultThemeNames[themeName];
+
   if (hasTheme) {
     userThemes = await UserThemes.edit({ user_id }, { active: themeName });
+  } else {
+    console.log("THEMES: ", themes, themeName);
   }
 
   return res.status(hasTheme ? 200 : 400).json(userThemes);
@@ -40,10 +48,14 @@ router.delete("/themes/:themeName", async (req, res) => {
   let userThemes = await UserThemes.find({ user_id }, true);
   const hasTheme = userThemes?.themes?.[themeName];
   if (hasTheme) {
+    if (userThemes.themes.active === themeName) {
+      userThemes.themes.active = "dark";
+    }
+
     delete userThemes.themes[themeName];
     userThemes = await UserThemes.edit({ user_id }, { themes: JSON.stringify(userThemes.themes) });
   }
-  return res.status(hasTheme ? 200 : 400).json(userThemes.theme);
+  return res.status(hasTheme ? 200 : 400).json(userThemes);
 });
 
 module.exports = router;

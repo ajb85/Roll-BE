@@ -42,7 +42,7 @@ async function verifyAccountInfo(req, res, next) {
 
 async function verifyUserThemes(req, res, next) {
   const { user_id } = res.locals.token;
-  const userThemes = await UserThemes.find({ user_id });
+  const userThemes = await UserThemes.find({ user_id }, true);
   res.locals.themes = userThemes?.themes;
 
   if (!res.locals.themes) {
