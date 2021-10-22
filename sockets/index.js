@@ -65,6 +65,7 @@ class SocketsManager {
     const shouldNotifyOnDiscord = !!newRecord;
 
     userList.forEach((user_id) => {
+      console.log("\n\nBROADCAST TO ", user_id, "\n\n");
       const sockets = this._getSocket(user_id);
       const isNotLog = !game.logs;
       sockets?.forEach((s) =>
@@ -72,7 +73,9 @@ class SocketsManager {
       );
       const wasNotUsersTurn = shouldNotifyOnDiscord && !oldRecord[user_id];
       const isNowUsersTurn = shouldNotifyOnDiscord && newRecord[user_id];
-
+      console.log("WAS NOT TURN: ", wasNotUsersTurn);
+      console.log("IS NOW TURN: ", isNowUsersTurn);
+      console.log("NO SOCKET: ", !sockets);
       wasNotUsersTurn && isNowUsersTurn && !sockets && this.notifyOnDiscord(user_id, game);
     });
   }
