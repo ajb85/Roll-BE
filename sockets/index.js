@@ -98,7 +98,6 @@ class SocketsManager {
         const timeout = isNaN(envTimeout) ? 300000 : envTimeout;
         this.timers[game.game_id] = setTimeout(async () => {
           const userIds = Object.keys(this.pendingDiscordMessages[game.game_id]);
-          console.log("USERS TO MESSAGE:", userIds);
           delete this.timers[game.game_id];
           delete this.pendingDiscordMessages[game.game_id];
 
@@ -108,7 +107,6 @@ class SocketsManager {
               updatedGame.currentRound > 12
                 ? `${game.name} is over and it's time to vote!\n${process.env.FRONTEND_URL}/game/play/${game.game_id}`
                 : `Time to Roll! It's your turn in game ${game.name}!\n${process.env.FRONTEND_URL}/game/play/${game.game_id}`;
-            console.log("SEND MESSAGE: ", message);
             const discordUserInfo = await Promise.all(
               userIds.map(
                 (userId) =>
@@ -117,13 +115,11 @@ class SocketsManager {
                   getDiscordUserFromUserId(userId)
               )
             );
-            console.log("DISCORD IDS: ", discordUserInfo);
             await Promise.all(
               discordUserInfo.map(async (info) => {
                 try {
                   if (info) {
                     const user = await discordClient.users.fetch(info.id);
-                    console.log("USER TO MESSAGE FOUND: ", !!user);
                     user && (await user.send(message));
                   }
                 } catch (err) {
