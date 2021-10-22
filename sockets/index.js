@@ -65,7 +65,7 @@ class SocketsManager {
     const oldRecord = this.gameRecords[game.game_id] || {};
     const newRecord = shouldRecord && this._recordTurns(game);
     const shouldNotifyOnDiscord = !!newRecord;
-    console.log("AM I ONLINE: ", this._getSocket(1));
+    console.log("AM I ONLINE: ", this.connected.users[1]);
     userList.forEach((user_id) => {
       const shouldLog = Number(user_id) === 1;
       shouldLog && console.log("\n\nBROADCAST TO ", user_id, "\n\n");
