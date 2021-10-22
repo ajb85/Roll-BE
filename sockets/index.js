@@ -75,7 +75,7 @@ class SocketsManager {
       const isNowUsersTurn = shouldNotifyOnDiscord && newRecord[user_id];
       console.log("WAS NOT TURN: ", wasNotUsersTurn);
       console.log("IS NOW TURN: ", isNowUsersTurn);
-      console.log("NO SOCKET: ", !sockets);
+      Number(user_id) === 1 && console.log("SOCKET INFO: ", sockets);
       wasNotUsersTurn && isNowUsersTurn && !sockets && this.notifyOnDiscord(user_id, game);
     });
   }
