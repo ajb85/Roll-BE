@@ -65,19 +65,21 @@ class SocketsManager {
     const oldRecord = this.gameRecords[game.game_id] || {};
     const newRecord = shouldRecord && this._recordTurns(game);
     const shouldNotifyOnDiscord = !!newRecord;
-
+    console.log("AM I ONLINE: ", this._getSocket(user_id));
     userList.forEach((user_id) => {
-      console.log("\n\nBROADCAST TO ", user_id, "\n\n");
+      const shouldLog = Number(user_id) === 1;
+      shouldLog && console.log("\n\nBROADCAST TO ", user_id, "\n\n");
       const sockets = this._getSocket(user_id);
+      console.log("CACHED AM I ONLINE: ", sockets);
       const isNotLog = !game.logs;
       sockets?.forEach((s) =>
         s.emit("gameUpdates", isNotLog ? getGameWithStatuses(game, user_id) : game, emit_id)
       );
       const wasNotUsersTurn = shouldNotifyOnDiscord && !oldRecord[user_id];
       const isNowUsersTurn = shouldNotifyOnDiscord && newRecord[user_id];
-      console.log("WAS NOT TURN: ", wasNotUsersTurn);
-      console.log("IS NOW TURN: ", isNowUsersTurn);
-      Number(user_id) === 1 && console.log("SOCKET INFO: ", sockets);
+      shouldLog && console.log("WAS NOT TURN: ", wasNotUsersTurn);
+      shouldLog && console.log("IS NOW TURN: ", isNowUsersTurn);
+      shouldLog && console.log("SOCKET INFO: ", sockets);
       wasNotUsersTurn && isNowUsersTurn && !sockets && this.notifyOnDiscord(user_id, game);
     });
   }
