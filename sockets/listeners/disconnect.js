@@ -11,6 +11,5 @@ module.exports = function (socket) {
     } else if (this.connected.users[user_id]) {
       this.connected.users[user_id] = this.connected.users[user_id].filter((s) => s !== socket);
     }
-    console.log("Connections remaining: ", this.connected.users[user_id], "\n\n");
   }
 };
