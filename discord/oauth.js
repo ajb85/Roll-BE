@@ -2,7 +2,7 @@ const { ClientCredentials, AuthorizationCode } = require("simple-oauth2");
 const OAuth = require("models/queries/oauthTokens.js");
 const axios = require("axios");
 
-const redirect_uri = "http://683b-47-227-113-94.ngrok.io/api/oauth/discord/complete"; //process.env.FRONTEND_URL + "/discord/callback";
+const redirect_uri = process.env.CURRENT_DEPLOY + "/api/oauth/discord/complete";
 const scope = "identify";
 
 const discord = {
