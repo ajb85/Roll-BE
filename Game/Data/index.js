@@ -39,7 +39,7 @@ function getUserRound(game, user_id) {
 }
 
 function isUsersTurn(game, user_id) {
-  const gameRound = getGameRound(game);
+  const gameRound = game.round === undefined ? getGameRound(game) : game.round;
   const userRound = getUserRound(game, user_id);
 
   return userRound <= gameRound;

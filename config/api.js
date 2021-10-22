@@ -15,10 +15,12 @@ const auth = require("middleware/authenticate.js");
 const authRouter = require("routes/auth/");
 const gamesRouter = require("routes/games/");
 const accountRouter = require("routes/account/");
+const oauthRouter = require("routes/oauth");
 
 server.use("/api/auth", authRouter);
 server.use("/api/games", auth, gamesRouter);
 server.use("/api/account", auth, accountRouter);
+server.use("/api/oauth", oauthRouter);
 
 server.get("/", (req, res) => {
   res.send("It's working!");

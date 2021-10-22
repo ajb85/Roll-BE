@@ -8,6 +8,7 @@ require("express-async-errors");
 require("app-module-path").addPath(__dirname);
 
 require("config/api.js");
+require("discord/");
 const http = require("config/http.js");
 
 const port = process.env.PORT || 4500;

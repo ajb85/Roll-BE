@@ -5,6 +5,10 @@ const cors = { origin: [process.env.FRONTEND_URL], methods: ["GET", "POST"] };
 const io = require("socket.io")(http, { cors });
 const decodeJWT = require("tools/decodeJWT.js");
 const getGameWithStatuses = require("tools/getGameWithStatuses.js");
+const { isUsersTurn } = require("Game/Data");
+const { getDiscordUserFromUserId } = require("discord/oauth.js");
+const Games = require("models/queries/games.js");
+const discordClient = require("discord/");
 
 io.use(async (socket, next) => {
   try {
@@ -28,6 +32,9 @@ class SocketsManager {
     this.io = io;
     this.connected = { sockets: {}, users: {} };
     this.emitLog = {};
+    this.gameRecords = {};
+    this.pendingDiscordMessages = {};
+    this.timers = {};
 
     console.log("\nSOCKETS ONLINE");
 
@@ -46,11 +53,16 @@ class SocketsManager {
   }
 
   emitGameUpdate(userList = [], g) {
-    if (!g) return;
+    if (!g || !g.game_id) return;
 
     const { rolls, ...game } = g;
     const emit_id = getEmitID();
     game.game_id && (this.emitLog[game.game_id] = emit_id);
+    const shouldRecord = game.game_id && game.scores;
+
+    const oldRecord = this.gameRecords[game.game_id] || {};
+    const newRecord = shouldRecord && this._recordTurns(game);
+    const shouldNotifyOnDiscord = !!newRecord;
 
     userList.forEach((user_id) => {
       const sockets = this._getSocket(user_id);
@@ -58,7 +70,64 @@ class SocketsManager {
       sockets?.forEach((s) =>
         s.emit("gameUpdates", isNotLog ? getGameWithStatuses(game, user_id) : game, emit_id)
       );
+      const wasNotUsersTurn = shouldNotifyOnDiscord && !oldRecord[user_id];
+      const isNowUsersTurn = shouldNotifyOnDiscord && newRecord[user_id];
+
+      wasNotUsersTurn && isNowUsersTurn && !sockets && this.notifyOnDiscord(user_id, game);
     });
+  }
+
+  async notifyOnDiscord(user_id, game) {
+    console.log("NOTIFY USER", user_id, "for", game.game_id);
+    try {
+      if (!this.pendingDiscordMessages[game.game_id]) {
+        this.pendingDiscordMessages[game.game_id] = {};
+      }
+
+      if (!this.pendingDiscordMessages[game.game_id][user_id]) {
+        this.pendingDiscordMessages[game.game_id][user_id] = true;
+      }
+
+      if (!this.timers[game.game_id]) {
+        this.timers[game.game_id] = setTimeout(async () => {
+          const userIds = Object.keys(this.pendingDiscordMessages[game.game_id]);
+          delete this.timers[game.game_id];
+          delete this.pendingDiscordMessages[game.game_id];
+
+          const updatedGame = await Games.find({ "g.id": game.game_id }, true);
+          if (updatedGame) {
+            const message =
+              updatedGame.round >= 13
+                ? `${game.name} is over and it's time to vote!\n${process.env.FRONTEND_URL}/game/play/${game.game_id}`
+                : `Time to Roll! It's your turn in game ${game.name}!\n${process.env.FRONTEND_URL}/game/play/${game.game_id}`;
+
+            const discordUserInfo = await Promise.all(
+              userIds.map(
+                (userId) =>
+                  isUsersTurn(updatedGame, userId) &&
+                  !this._getSocket(userId) &&
+                  getDiscordUserFromUserId(userId)
+              )
+            );
+
+            await Promise.all(
+              discordUserInfo.map(async (info) => {
+                try {
+                  if (info) {
+                    const user = await discordClient.users.fetch(info.id);
+                    user && (await user.send(message));
+                  }
+                } catch (err) {
+                  console.log("ERROR NOTIFYING ON DISCORD: ", err);
+                }
+              })
+            );
+          }
+        }, process.env.DISCORD_NOTIFICATION_DELAY || 300000);
+      }
+    } catch (err) {
+      console.log("DISCORD GENERIC ERROR: ", err);
+    }
   }
 
   _getSocket(id) {
@@ -69,6 +138,15 @@ class SocketsManager {
     const loggedId = this.emitLog[game_id];
     const noEmitLogs = loggedId === undefined;
     return noEmitLogs || Number(loggedId) === Number(emit_id);
+  }
+
+  _recordTurns(game) {
+    this.gameRecords[game.game_id] = {};
+    Object.keys(game.scores).forEach((user_id) => {
+      this.gameRecords[game.game_id][user_id] = isUsersTurn(game, user_id);
+    });
+
+    return this.gameRecords[game.game_id];
   }
 }
 
