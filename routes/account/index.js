@@ -20,11 +20,15 @@ router.post("/themes/update", verifyUserThemes, async (req, res) => {
 });
 
 const defaultThemeNames = {
-  light: true,
   dark: true,
+  light: true,
+  night: true,
+  neon: true,
+  beach: true,
+  forest: true,
 };
 
-router.post("/themes/active/:themeName", async (req, res) => {
+router.post("/themes/active/:themeName", verifyUserThemes, async (req, res) => {
   const { themeName } = req.params;
   const { user_id } = res.locals.token;
 
