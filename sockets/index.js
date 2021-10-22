@@ -113,7 +113,7 @@ class SocketsManager {
               userIds.map(
                 (userId) =>
                   isUsersTurn(updatedGame, userId) &&
-                  !this._isSocketOffline(this._getSocket(userId)) &&
+                  this._isSocketOffline(this._getSocket(userId)) &&
                   getDiscordUserFromUserId(userId)
               )
             );
