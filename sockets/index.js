@@ -77,7 +77,7 @@ class SocketsManager {
       const wasNotUsersTurn = shouldNotifyOnDiscord && !oldRecord[user_id];
       const isNowUsersTurn = shouldNotifyOnDiscord && newRecord[user_id];
 
-      const isOffline = !sockets || sockets.every(({ connected }) => !connected);
+      const isOffline = this._isSocketOffline(socket);
       wasNotUsersTurn && isNowUsersTurn && isOffline && this.notifyOnDiscord(user_id, game);
     });
   }
@@ -98,12 +98,11 @@ class SocketsManager {
         const timeout = isNaN(envTimeout) ? 300000 : envTimeout;
         this.timers[game.game_id] = setTimeout(async () => {
           const userIds = Object.keys(this.pendingDiscordMessages[game.game_id]);
-          console.log("MESSAGE", userIds);
+          console.log("USERS TO MESSAGE:", userIds);
           delete this.timers[game.game_id];
           delete this.pendingDiscordMessages[game.game_id];
 
           const updatedGame = await Games.find({ "g.id": game.game_id }, true);
-          console.log("UPDATED GAME", updatedGame);
           if (updatedGame) {
             const message =
               updatedGame.round >= 13
@@ -114,7 +113,7 @@ class SocketsManager {
               userIds.map(
                 (userId) =>
                   isUsersTurn(updatedGame, userId) &&
-                  !this._getSocket(userId) &&
+                  !this._isSocketOffline(this._getSocket(userId)) &&
                   getDiscordUserFromUserId(userId)
               )
             );
@@ -157,6 +156,12 @@ class SocketsManager {
     });
 
     return this.gameRecords[game.game_id];
+  }
+
+  _isSocketOffline(sockets) {
+    return Array.isArray(sockets)
+      ? !sockets.length || sockets.every(({ disconnected }) => disconnected)
+      : !sockets?.connected;
   }
 }
 
