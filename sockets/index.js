@@ -89,18 +89,22 @@ class SocketsManager {
       }
 
       if (!this.timers[game.game_id]) {
+        const envTimeout = Number(process.env.DISCORD_NOTIFICATION_DELAY);
+        const timeout = isNaN(envTimeout) ? 300000 : envTimeout;
         this.timers[game.game_id] = setTimeout(async () => {
           const userIds = Object.keys(this.pendingDiscordMessages[game.game_id]);
+          console.log("MESSAGE", userIds);
           delete this.timers[game.game_id];
           delete this.pendingDiscordMessages[game.game_id];
 
           const updatedGame = await Games.find({ "g.id": game.game_id }, true);
+          console.log("UPDATED GAME", updatedGame);
           if (updatedGame) {
             const message =
               updatedGame.round >= 13
                 ? `${game.name} is over and it's time to vote!\n${process.env.FRONTEND_URL}/game/play/${game.game_id}`
                 : `Time to Roll! It's your turn in game ${game.name}!\n${process.env.FRONTEND_URL}/game/play/${game.game_id}`;
-
+            console.log("SEND MESSAGE: ", message);
             const discordUserInfo = await Promise.all(
               userIds.map(
                 (userId) =>
@@ -109,12 +113,13 @@ class SocketsManager {
                   getDiscordUserFromUserId(userId)
               )
             );
-
+            console.log("DISCORD IDS: ", discordUserInfo);
             await Promise.all(
               discordUserInfo.map(async (info) => {
                 try {
                   if (info) {
                     const user = await discordClient.users.fetch(info.id);
+                    console.log("USER TO MESSAGE FOUND: ", !!user);
                     user && (await user.send(message));
                   }
                 } catch (err) {
@@ -123,7 +128,7 @@ class SocketsManager {
               })
             );
           }
-        }, process.env.DISCORD_NOTIFICATION_DELAY || 300000);
+        }, timeout);
       }
     } catch (err) {
       console.log("DISCORD GENERIC ERROR: ", err);
