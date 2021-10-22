@@ -105,7 +105,7 @@ class SocketsManager {
           const updatedGame = await Games.find({ "g.id": game.game_id }, true);
           if (updatedGame) {
             const message =
-              updatedGame.round >= 13
+              updatedGame.currentRound > 12
                 ? `${game.name} is over and it's time to vote!\n${process.env.FRONTEND_URL}/game/play/${game.game_id}`
                 : `Time to Roll! It's your turn in game ${game.name}!\n${process.env.FRONTEND_URL}/game/play/${game.game_id}`;
             console.log("SEND MESSAGE: ", message);
