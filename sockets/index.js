@@ -77,7 +77,7 @@ class SocketsManager {
       const wasNotUsersTurn = shouldNotifyOnDiscord && !oldRecord[user_id];
       const isNowUsersTurn = shouldNotifyOnDiscord && newRecord[user_id];
 
-      const isOffline = this._isSocketOffline(socket);
+      const isOffline = this._isSocketOffline(sockets);
       wasNotUsersTurn && isNowUsersTurn && isOffline && this.notifyOnDiscord(user_id, game);
     });
   }
