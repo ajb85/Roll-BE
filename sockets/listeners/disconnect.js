@@ -1,6 +1,6 @@
 module.exports = function (socket) {
   const name = socket?.user?.username || "SOCKET";
-  console.log(`\n\n${name} Disconnected\n\n`);
+  console.log(`\n\n${name} Disconnected`);
   const socketRecord = this.connected.sockets[socket.id];
 
   if (socketRecord) {
@@ -11,5 +11,10 @@ module.exports = function (socket) {
     } else if (this.connected.users[user_id]) {
       this.connected.users[user_id] = this.connected.users[user_id].filter((s) => s !== socket);
     }
+    console.log(
+      "Connections remaining: ",
+      this.connected.users[user_id]?.length ? this.connected.users[user_id].length : 0,
+      "\n\n"
+    );
   }
 };

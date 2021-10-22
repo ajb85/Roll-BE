@@ -45,7 +45,9 @@ class SocketsManager {
 
       this.connected.sockets[socket.id] = socket;
       this.connected.users[socket.user.id].push(socket);
-      console.log(`${socket.user.username} Connected`);
+      console.log(
+        `${socket.user.username} Connected: ${this.connected.users[socket.user.id].length}`
+      );
       for (let l in listeners) {
         socket.on(l, listeners[l].bind(this, socket));
       }
