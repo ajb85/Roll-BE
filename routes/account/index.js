@@ -26,6 +26,7 @@ const defaultThemeNames = {
   neon: true,
   beach: true,
   forest: true,
+  spooktober: true,
 };
 
 router.post("/themes/active/:themeName", verifyUserThemes, async (req, res) => {
