@@ -41,6 +41,10 @@ class SocketsManager {
     this.io.on("connection", (socket) => {
       if (!this.connected.users[socket.user.id]) {
         this.connected.users[socket.user.id] = [];
+      } else {
+        this.connected.users[socket.user.id] = this.connected.users[socket.user.id].filter(
+          ({ connected }) => connected
+        );
       }
 
       this.connected.sockets[socket.id] = socket;
