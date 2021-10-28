@@ -20,13 +20,13 @@ router.post("/themes/update", verifyUserThemes, async (req, res) => {
 });
 
 const defaultThemeNames = {
-  dark: true,
-  light: true,
-  night: true,
-  neon: true,
-  beach: true,
-  forest: true,
-  spooktober: true,
+  Dark: true,
+  Light: true,
+  Night: true,
+  Neon: true,
+  Beach: true,
+  Forest: true,
+  Spooktober: true,
 };
 
 router.post("/themes/active/:themeName", verifyUserThemes, async (req, res) => {
